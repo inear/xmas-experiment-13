@@ -1,0 +1,10 @@
+// Hide for browsers
+.isHidden {
+  display: none;
+  visibility: hidden;
+}
+
+// Hide visually but maintain layout
+.isInvisible {
+  visibility: hidden;
+}

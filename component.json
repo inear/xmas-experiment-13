@@ -1,0 +1,22 @@
+{
+  "name": "snowbuilder",
+  "version": "0.0.0",
+  "main": "app/index.js",
+  "dependencies": {
+    "component/raf": "*",
+    "visionmedia/debug": "*",
+    "kewah/css-animation-event-types": "*",
+    "kewah/mixin": "*"
+  },
+  "paths": [
+    "lib"
+  ],
+  "local": [
+    "base-css"
+  ],
+  "scripts": [
+    "app/utils/detector.js",
+    "app/builder.js",
+    "app/index.js"
+  ]
+}

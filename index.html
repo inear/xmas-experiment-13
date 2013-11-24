@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Snowman</title>
+  <meta name="description" content="A math and music journey for kids">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <meta name="description" content="A math and music journey for kids" />
+  <meta property="og:title" content="Plus & Minus" />
+  <meta property="og:url" content="http://inear.se/plusminus/" />
+  <link rel="image_src" href="http://inear.se/plusminus/assets/images/plusminus.jpg" />
+  <meta property="og:image" content="http://inear.se/plusminus/assets/images/plusminus.jpg" />
+  <meta property="og:description" content="A math and music journey for kids" />
+  <!-- @if NODE_ENV='dev' -->
+  <link rel="stylesheet" href="build/main.css">
+  <!-- @endif -->
+
+  <!-- @if NODE_ENV='prod' -->
+  <link rel="stylesheet" href="css/main.css">
+  <!-- @endif -->
+  
+</head>
+<body>
+ 
+
+  <canvas id="builderCanvas"></canvas> 
+  <!--[if lt IE 10]>
+  <script src='vendors/history.min.js'></script>
+  <script src='vendors/es5-shim.js'></script>
+  <![endif]-->
+
+  <!-- build:js js/scripts.js -->
+  <script src='vendors/modernizr-2.6.2.custom.js'></script>
+  <script type="text/javascript" src="vendors/jquery-1.6.2.min.js"></script>
+  <script type="text/javascript" src="vendors/three.js"></script>
+  <script type="text/javascript" src="vendors/physi.js"></script>
+  <!--<script type="text/javascript" src="vendors/howler.js"></script>-->
+  <script src='build/app.js'></script>
+  <!-- endbuild -->
+
+  <!-- @if NODE_ENV='dev' -->
+
+  <!-- @endif -->
+
+  <!-- @if NODE_ENV='prod' -->
+  <!--<script src='app.js'></script>-->
+  <!-- @endif -->
+
+
+
+  <script>require('snowbuilder/app');</script>
+
+  <!--<script type="text/javascript">
+    var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+    document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    <script type="text/javascript">
+    try{
+    var pageTracker = _gat._getTracker("UA-181266-1");
+    pageTracker._trackPageview();
+    } catch(err) {}
+  </script>-->
+</body>
+</html>

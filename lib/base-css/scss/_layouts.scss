@@ -1,0 +1,54 @@
+//
+// Center the element.
+//
+.center {
+  text-align: center;
+  margin: 0 auto;
+}
+
+//
+// Align a list group on the left/right
+//
+// <div class="alignListGroup">
+//   <ul class="inlineList">
+//     <li class="listItem">Item Left</li>
+//   </ul>
+//   <ul class="inlineList alignRight">
+//     <li class="listItem">Item Right</li>
+//   </ul>
+// </div>
+//
+// >> Render
+// Item Left [...] Item Right
+//
+.alignListGroup {
+  @include clearfix;
+
+  > .inlineList {
+    float: left;
+
+    &.alignRight {
+      float: right;
+    }
+  }
+}
+
+//
+// Display a list inline
+//
+// <ul class="inlineList">
+//   <li class="listItem">Item 1</li>
+//   <li class="listItem">Item 2</li>
+//   <li class="listItem">Item 3</li>
+// </ul>
+//
+// >> Render
+// Item 1 | Item 2 | Item 3
+//
+.inlineList {
+  display: block;
+
+  > .listItem {
+    display: inline-block;
+  }
+}

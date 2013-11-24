@@ -1,0 +1,28 @@
+{
+  "name": "snowbuilder",
+  "version": "0.0.1",
+  "description": "",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "grunt": "~0.4.0",
+    "grunt-contrib-jshint": "0.1.1rc6",
+    "grunt-contrib-clean": "0.4.0rc6",
+    "grunt-contrib-uglify": "~0.2.4",
+    "grunt-contrib-connect": "0.1.0",
+    "grunt-contrib-watch": "0.1.4",
+    "grunt-contrib-compass": "0.1.0",
+    "grunt-component-build": "~0.3.2",
+    "component-builder": "~0.6.2",
+    "grunt-shell": "0.2.1",
+    "grunt-contrib-copy": "0.4.0",
+    "grunt-contrib-cssmin": "0.4.2",
+    "grunt-contrib-htmlmin": "0.1.1",
+    "grunt-usemin": "~0.1.12",
+    "grunt-preprocess": "~3.0.1",
+    "grunt-env": "~0.4.0",
+    "grunt-contrib-concat": "~0.3.0"
+  }
+}

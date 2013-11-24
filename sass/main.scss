@@ -1,0 +1,16 @@
+@mixin animation-timing-function($timing...) {
+  -o-animation-timing-function: $timing;
+  -moz-animation-timing-function: $timing;
+  -webkit-animation-timing-function: $timing;
+  animation-timing-function: $timing;
+}
+
+
+@import "compass";
+@import "compass/css3";
+@import "compass/utilities/general/clearfix";
+@import "plugins/keyframes";
+@import "plugins/media-queries";
+@import "variables";
+@import "general";
+@import "mobile";

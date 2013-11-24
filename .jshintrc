@@ -1,0 +1,25 @@
+{
+  "curly": true,
+  "eqeqeq": true,
+  "immed": true,
+  "latedef": false,
+  "newcap": false,
+  "noarg": true,
+  "sub": true,
+  "undef": true,
+  "unused": true,
+  "trailing": true,
+  "boss": true,
+  "eqnull": true,
+  "node": true,
+  "browser": true,
+  "es5": true,
+  "globals": {
+    "$":true,
+    "createjs": true,
+    "TweenLite": true,
+    "Ease": true,
+    "Physijs":true,
+    "THREE":true,
+  }
+}

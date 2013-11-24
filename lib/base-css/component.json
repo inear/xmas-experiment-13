@@ -1,0 +1,9 @@
+{
+  "name": "base-css",
+  "repo": "northkingdom/base-css",
+  "description": "",
+  "version": "0.0.1",
+  "styles": [
+    "reset.css"
+  ]
+}
