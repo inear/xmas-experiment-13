@@ -46,10 +46,6 @@ mixin(Builder.prototype, {
 
     this._clock = new THREE.Clock();
 
-    //physics
-    Physijs.scripts.worker = '/vendors/physijs_worker.js';
-    Physijs.scripts.ammo = '/vendors/ammo.js';
-
     this._init3D();
     this._initLights();
     this._createSceneObjects();
@@ -92,13 +88,11 @@ mixin(Builder.prototype, {
   _init3D: function(){
 
     this.camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 6000 );
-    this.scene = new Physijs.Scene();
+    this.scene = new THREE.Scene();
 
     this.camera.position.set(0,1700,1700);
     this.camera.lookAt( this.scene.position );
     //this.scene.overrideMaterial = new THREE.MeshBasicMaterial({wireframe:true,color:0x333333});
-
-    this.scene.setGravity(new THREE.Vector3( 0, -500, 0 ));
 
     if( detector.isTouchDevice && detector.isMobile ) {
       this.sizeRatio = 2.5;
@@ -172,22 +166,6 @@ mixin(Builder.prototype, {
 
 
   _createSceneObjects: function(){
-    var solidMaterial = Physijs.createMaterial(new THREE.MeshLambertMaterial({ color: 0x888888 }),
-      0.4, // medium friction
-      1 // low restitution
-    );
-    solidMaterial.visible = false;
-
-    var collider = new Physijs.BoxMesh(
-      new THREE.CubeGeometry( 5000,  5000,1 ),
-      solidMaterial,
-      0 //mass
-    );
-    collider.rotation.x = -Math.PI*0.5;
-    collider.position.set(0,0,0);
-    collider.visible = false;
-
-    this.scene.add(collider);
 
     var geo = new THREE.IcosahedronGeometry(50,3);
     var vertices = geo.vertices;
@@ -199,10 +177,7 @@ mixin(Builder.prototype, {
       vertex.z += Math.random()*5-2.5;
     };
 
-    this.snowBall = new Physijs.SphereMesh( geo, Physijs.createMaterial(new THREE.MeshPhongMaterial({ perPixel:true, color: 0xffffff, ambient:0xffffff }),
-      2, // medium friction
-      0.7 // low restitution
-    ),100)
+    this.snowBall = new THREE.Mesh( geo, new THREE.MeshPhongMaterial({ perPixel:true, color: 0xffffff, ambient:0xffffff }));
     this.snowBall.castShadow = true;
     this.snowBall.receiveShadow = false;
     this.snowBall.position.y = 75;
@@ -211,11 +186,11 @@ mixin(Builder.prototype, {
     this.trailTexture = new THREE.Texture(this.trailCanvas.el);
     //this.trailTexture.mapping = THREE.UVMapping;
 
-    var reflectionMap = THREE.ImageUtils.loadTexture('assets/images/snow-reflection.jpg');
+    /*var reflectionMap = THREE.ImageUtils.loadTexture('assets/images/snow-reflection.jpg');
     reflectionMap.repeat.x = reflectionMap.repeat.y = 1
     reflectionMap.wrapT = reflectionMap.wrapS = THREE.RepeatWrapping;
     reflectionMap.needsUpdate = true;
-
+*/
     var diffuseMap = THREE.ImageUtils.loadTexture('assets/images/snow-diffuse.jpg');
     diffuseMap.wrapT = diffuseMap.wrapS = THREE.RepeatWrapping;
 
@@ -286,12 +261,9 @@ mixin(Builder.prototype, {
 
     if( this._mouseIsDown ) {
       //this._mouseMoved = false;
-      this.snowBall.applyImpulse( new THREE.Vector3(1500*this._normalizedMouse2D.x,0,1500*this._normalizedMouse2D.y), new THREE.Vector3(0,0,0));
+
     }
 
-    this.scene.simulate(); // run physics
-
-    this.snowBall.setDamping( 0, 0.95);
     this.snowBall.scale.set( settings.ballScale,settings.ballScale,settings.ballScale);
 
     //highlight faces
