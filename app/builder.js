@@ -46,6 +46,12 @@ mixin(Builder.prototype, {
 
     this._clock = new THREE.Clock();
 
+    this.momentumX = 0;
+    this.momentumZ = 0;
+
+    this.up = new THREE.Vector3(0,1,0);
+    this.moveDir = new THREE.Vector3();
+
     this._init3D();
     this._initLights();
     this._createSceneObjects();
@@ -168,6 +174,7 @@ mixin(Builder.prototype, {
   _createSceneObjects: function(){
 
     var geo = new THREE.IcosahedronGeometry(50,3);
+    geo.isDynamic = true;
     var vertices = geo.vertices;
     var vertex;
     for (var i = vertices.length - 1; i >= 0; i--) {
@@ -181,6 +188,7 @@ mixin(Builder.prototype, {
     this.snowBall.castShadow = true;
     this.snowBall.receiveShadow = false;
     this.snowBall.position.y = 75;
+
     this.scene.add(this.snowBall);
 
     this.trailTexture = new THREE.Texture(this.trailCanvas.el);
@@ -198,7 +206,7 @@ mixin(Builder.prototype, {
     var groundGeo = new THREE.PlaneGeometry(this.groundSize.width,this.groundSize.height,150,150);
 
     var snowUniforms = {
-      uDisplacementScale: { type: "f", value: -27.1 }
+      uDisplacementScale: { type: "f", value: 47.1 }
     };
 
     var finalSnowUniform = THREE.UniformsUtils.merge( [THREE.ShaderLib["phong"].uniforms, snowUniforms] );
@@ -252,20 +260,53 @@ mixin(Builder.prototype, {
     }
     this.delta = delta;
 
-    if( this.snowBall.position.distanceTo(this._prevSnowBallPos ) > 1 ) {
+    //this.camera.rotation.y += 0.1;
+
+    var rotateAmountFactor = 0.05*(80-settings.ballRadius)/40;
+
+    if( this._mouseIsDown ) {
+      var rotateSpeedFactor = 70/100*(100-settings.ballRadius);
+      this.momentumX += (this._normalizedMouse2D.x*2.5 - this.momentumX)/rotateSpeedFactor;
+      this.momentumZ += (this._normalizedMouse2D.y*2.5 - this.momentumZ)/rotateSpeedFactor;
+    }
+    else {
+      this.momentumX *= 0.9
+      this.momentumZ *= 0.9
+    }
+
+    this.moveDir.set(-this.momentumX, 0, -this.momentumZ);
+
+    var rotationDir = new THREE.Vector3().crossVectors(this.moveDir, this.up);
+    var amount = Math.sqrt( this.momentumX*rotateAmountFactor * this.momentumX*rotateAmountFactor + this.momentumZ*rotateAmountFactor * this.momentumZ*rotateAmountFactor);
+
+    this._rotateAroundWorldAxis( this.snowBall, rotationDir,amount)
+
+    this.snowBall.position.x += this.momentumX;
+    this.snowBall.position.z += this.momentumZ;
+
+
+    if( this.snowBall.position.distanceTo(this._prevSnowBallPos ) > 0.3 ) {
+      this.trailCanvas.setTrailRadius( (settings.ballRadius*0.75)/2000*1024);
       this.trailCanvas.update((this.snowBall.position.x/this.groundSize.width)*1024+512,(this.snowBall.position.z/this.groundSize.height)*1024 + 512)
       this.trailTexture.needsUpdate = true;
     }
+
     this._prevSnowBallPos.copy(this.snowBall.position);
-    //this.camera.rotation.y += 0.1;
 
-    if( this._mouseIsDown ) {
-      //this._mouseMoved = false;
+    //this.snowBall.scale.set( settings.ballScale,settings.ballScale,settings.ballScale);
 
-    }
+    var vertices = this.snowBall.geometry.vertices;
+    var vertex;
+    for (var i = vertices.length - 1; i >= 0; i--) {
+      vertex = vertices[i];
+      vertex.setLength(settings.ballRadius);
+     /* vertex.y += Math.random()*15-7.5;
+      vertex.x += Math.random()*15-7.5;
+      vertex.z += Math.random()*15-7.5;*/
+    };
+    this.snowBall.geometry.verticesNeedUpdate = true;
 
-    this.snowBall.scale.set( settings.ballScale,settings.ballScale,settings.ballScale);
-
+    this.snowBall.position.y = settings.ballRadius*2 - 20-40*settings.ballRadius/40;
     //highlight faces
 
     this.camera.position.lerp(this.snowBall.position.clone().add( this._cameraOffset ),0.1);
@@ -274,6 +315,16 @@ mixin(Builder.prototype, {
 
 
     raf( this._draw );
+  },
+
+  _rotateAroundWorldAxis: function(object, axis, radians) {
+    var rotWorldMatrix = new THREE.Matrix4();
+    var euler = new THREE.Euler();
+    rotWorldMatrix.makeRotationAxis(axis.normalize(), radians);
+    rotWorldMatrix.multiply(object.matrix);
+    object.matrix = rotWorldMatrix;
+
+    object.rotation = euler.setFromRotationMatrix(object.matrix);
   },
 
   _onResize: function() {

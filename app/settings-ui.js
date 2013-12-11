@@ -6,9 +6,9 @@ function SettingsUI(){
 
   $("#uiContainer").append(gui.domElement);
 
-  gui.add(settings, 'ballRadius').min(5).max(100.12);
+  gui.add(settings, 'ballRadius').min(5).max(80);
 
-  gui.add(settings, 'ballScale').min(1).max(10);
+  gui.add(settings, 'ballScale').min(0.2).max(3);
 }
 
 module.exports = SettingsUI;

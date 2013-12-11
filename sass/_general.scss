@@ -49,5 +49,7 @@ body {
   height:1024px;
   z-index: 100;
   display:none;
+  @include transform-origin(0,0);
+  @include transform( scale(0.5));
 }
 

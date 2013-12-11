@@ -1,3 +1,5 @@
+"use strict";
+
 module.exports = Trail;
 
 function Trail(){
@@ -15,6 +17,10 @@ function Trail(){
 
 var p = Trail.prototype;
 
+p.setTrailRadius = function(value){
+  this.radius = value;
+}
+
 p.update = function(x,y) {
 
   var currentPoint = { x: x, y: y };
@@ -22,16 +28,17 @@ p.update = function(x,y) {
   var angle = angleBetween(this.lastPoint, currentPoint);
 
   var interpolateX,interpolateY;
-  for (var i = 0; i < dist; i+=5) {
+  for (var i = 0; i < dist; i+=3) {
 
     interpolateX = this.lastPoint.x + (Math.sin(angle) * i);
     interpolateY = this.lastPoint.y + (Math.cos(angle) * i);
 
-    var radgrad = this.ctx.createRadialGradient(interpolateX,interpolateY,12,interpolateX,interpolateY,20);
-
-    radgrad.addColorStop(0, 'rgba(0,0,0,0.6)');
-    radgrad.addColorStop(0.1, 'rgba(0,0,0,0.3)');
-    radgrad.addColorStop(1, 'rgba(255,255,255,0)');
+    var radgrad = this.ctx.createRadialGradient(interpolateX,interpolateY,this.radius*0.45,interpolateX,interpolateY,this.radius);
+    var pressure = 255 - Math.floor(55 + 200*this.radius/60);
+    var lastColor = 255;// - Math.floor(255*this.radius/40);
+    radgrad.addColorStop(0, 'rgba('+pressure+','+pressure+','+pressure+',0.3)');
+    radgrad.addColorStop(0.2, 'rgba('+pressure+','+pressure+','+pressure+',0.6)');
+    radgrad.addColorStop(1, 'rgba('+lastColor+','+lastColor+','+lastColor+',0)');
 
     this.ctx.fillStyle = radgrad;
     this.ctx.fillRect(interpolateX-20, interpolateY-20, 40, 40);

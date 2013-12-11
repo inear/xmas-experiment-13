@@ -33,7 +33,7 @@ void main() {
 
     #ifdef VERTEX_TEXTURES
         vec3 dv = texture2D( bumpMap, vUv ).xyz;
-        float df = uDisplacementScale * dv.x;
+        float df = uDisplacementScale * (1.0-dv.x);
         vec4 displacedPosition = mvPosition;
         displacedPosition.y -= df;
 
