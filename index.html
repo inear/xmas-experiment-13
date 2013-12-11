@@ -19,12 +19,14 @@
   <!-- @if NODE_ENV='prod' -->
   <link rel="stylesheet" href="css/main.css">
   <!-- @endif -->
-  
+
 </head>
 <body>
- 
-
-  <canvas id="builderCanvas"></canvas> 
+  <div id="stage">
+    <canvas id="builderCanvas"></canvas>
+    <canvas id="c" class="trail-canvas" width="1024" height="1024"></canvas>
+  </div>
+  <div id="uiContainer"></div>
   <!--[if lt IE 10]>
   <script src='vendors/history.min.js'></script>
   <script src='vendors/es5-shim.js'></script>
@@ -32,6 +34,7 @@
 
   <!-- build:js js/scripts.js -->
   <script src='vendors/modernizr-2.6.2.custom.js'></script>
+  <script type="text/javascript" src="vendors/dat.gui.js"></script>
   <script type="text/javascript" src="vendors/jquery-1.6.2.min.js"></script>
   <script type="text/javascript" src="vendors/three.js"></script>
   <script type="text/javascript" src="vendors/physi.js"></script>

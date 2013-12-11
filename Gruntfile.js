@@ -1,4 +1,5 @@
 'use strict';
+var stringToJs = require('component-string');
 
 module.exports = function(grunt) {
 
@@ -52,11 +53,14 @@ module.exports = function(grunt) {
     watch: {
       css: {
         files: ['**/*.scss'],
+
         tasks: ['compass:dev']
       },
       component: {
         files: [
-          'app/**/*.js','lib/**/*.css'
+          'app/**/*.js',
+          'lib/**/*.css',
+          'app/shaders/**/*.glsl',
         ],
         tasks: ['component_build:dev']
       }
@@ -107,7 +111,7 @@ module.exports = function(grunt) {
         styles: false,
         sourceUrls: false,
         configure: function(builder) {
-          //builder.use(handlebars());
+          builder.use(stringToJs);
           //builder.use(json());
         }
       },
@@ -119,7 +123,7 @@ module.exports = function(grunt) {
         styles: false,
         sourceUrls: false,
         configure: function(builder) {
-          //builder.use(json());
+          builder.use(stringToJs);
         }
       }
     },

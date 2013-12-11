@@ -5,18 +5,25 @@
   "dependencies": {
     "component/raf": "*",
     "visionmedia/debug": "*",
-    "kewah/css-animation-event-types": "*",
-    "kewah/mixin": "*"
+    "kewah/mixin": "0.1.0",
+    "kewah/dom-event-map": "0.1.1"
   },
   "paths": [
     "lib"
+  ],
+  "strings": [
+    "app/shaders/ground_vs.glsl",
+    "app/shaders/ground_fs.glsl"
   ],
   "local": [
     "base-css"
   ],
   "scripts": [
     "app/utils/detector.js",
+    "app/settings.js",
+    "app/settings-ui.js",
     "app/builder.js",
+    "app/trail.js",
     "app/index.js"
   ]
 }

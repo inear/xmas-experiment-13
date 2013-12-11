@@ -6,7 +6,7 @@
 html, body {
   width: 100%;
   height: 100%;
-  background:#ff0000;
+  background:#ffffff;
 }
 
 body {
@@ -21,11 +21,33 @@ body {
 
 }
 
+#stage {
+  width:100%;
+  height:100%;
+  position:absolute;
+  top:0;
+  left:0;
+}
+
+#uiContainer {
+  z-index:4;
+}
+
 #builderCanvas {
   width:100%;
   height:100%;
   position:absolute;
   top:0;
   left:0;
+}
+
+.trail-canvas {
+  position:absolute;
+  top:0;
+  left:0;
+  width:1024px;
+  height:1024px;
+  z-index: 100;
+  display:none;
 }
 
