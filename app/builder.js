@@ -179,14 +179,16 @@ mixin(Builder.prototype, {
     var vertex;
 
     var reflectionMap = THREE.ImageUtils.loadTexture('assets/images/snow-reflection2.jpg');
-    reflectionMap.repeat.x = reflectionMap.repeat.y = 1
+    reflectionMap.repeat.x = reflectionMap.repeat.y = 4
     reflectionMap.wrapT = reflectionMap.wrapS = THREE.RepeatWrapping;
 
 
     var ballMap = THREE.ImageUtils.loadTexture('assets/images/snow-diffuse2.jpg');
     ballMap.wrapT = ballMap.wrapS = THREE.RepeatWrapping;
 
-    this.snowBall = new THREE.Mesh( geo, new THREE.MeshPhongMaterial({ map:ballMap,perPixel:true, color: 0xffffff, ambient:0xffffff, specularMap: reflectionMap, specular:0xffffff,shininess:30 }));
+    var ballBumpMap = THREE.ImageUtils.loadTexture('assets/images/ball-bump.jpg');
+
+    this.snowBall = new THREE.Mesh( geo, new THREE.MeshPhongMaterial({ map:ballMap,perPixel:true, color: 0xffffff, ambient:0xffffff, bumpMap: ballBumpMap, bumpScale:3, specularMap: reflectionMap, specular:0xffffff,shininess:10 }));
     this.snowBall.castShadow = true;
     this.snowBall.receiveShadow = false;
     this.snowBall.position.y = 75;
@@ -205,7 +207,7 @@ mixin(Builder.prototype, {
     var groundGeo = new THREE.PlaneGeometry(this.groundSize.width,this.groundSize.height,150,150);
 
     var snowUniforms = {
-      uDisplacementScale: { type: "f", value: 47.1 }
+      uDisplacementScale: { type: "f", value: 67.1 }
     };
 
     var finalSnowUniform = THREE.UniformsUtils.merge( [THREE.ShaderLib["phong"].uniforms, snowUniforms] );
@@ -286,7 +288,9 @@ mixin(Builder.prototype, {
 
     if( this.snowBall.position.distanceTo(this._prevSnowBallPos ) > 0.3 ) {
 
-      settings.ballRadius += 0.01;
+      if( settings.ballRadius < 65 ) {
+        settings.ballRadius += 0.01;
+      }
       this.trailCanvas.setTrailRadius( (settings.ballRadius*0.75)/2000*1024);
       this.trailCanvas.update((this.snowBall.position.x/this.groundSize.width)*1024+512,(this.snowBall.position.z/this.groundSize.height)*1024 + 512)
       this.trailTexture.needsUpdate = true;
@@ -303,8 +307,13 @@ mixin(Builder.prototype, {
 
       worldVector = this.snowBall.localToWorld( vertex.clone() );
 
-      if( worldVector.y < 0 ) {
-        vertex.setLength(settings.ballRadius);
+      //if( this.up.negate().dot( this.snowBall.position.clone().sub(worldVector).normalize()) < 0.2 ) {
+      if( worldVector.y < -12 || worldVector.distanceTo(this.snowBall.position)<settings.ballRadius-10 ) {
+        vertex.hasUpdated = true;
+        vertex.setLength(settings.ballRadius + Math.random()*2.3);
+      }
+      else if( vertex.hasUpdated && worldVector.y > 5 ) {
+        vertex.hasUpdated = false;
       }
      /* vertex.y += Math.random()*15-7.5;
       vertex.x += Math.random()*15-7.5;

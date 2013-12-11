@@ -25205,7 +25205,7 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 			parameters.shadowMapEnabled ? "#define USE_SHADOWMAP" : "",
 			parameters.shadowMapEnabled ? "#define " + shadowMapTypeDefine : "",
-			parameters.shadowMapDebug ? "#define SHADOWMAP_DEBUG" : "",
+			parameters.shadowMapDebug ? "#define shadowMapDebug" : "",
 			parameters.shadowMapCascade ? "#define SHADOWMAP_CASCADE" : "",
 
 			"uniform mat4 viewMatrix;",
