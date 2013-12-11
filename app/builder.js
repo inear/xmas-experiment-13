@@ -173,18 +173,20 @@ mixin(Builder.prototype, {
 
   _createSceneObjects: function(){
 
-    var geo = new THREE.IcosahedronGeometry(50,3);
+    var geo = new THREE.IcosahedronGeometry(settings.ballRadius,3);
     geo.isDynamic = true;
     var vertices = geo.vertices;
     var vertex;
-    for (var i = vertices.length - 1; i >= 0; i--) {
-      vertex = vertices[i];
-      vertex.y += Math.random()*5-2.5;
-      vertex.x += Math.random()*5-2.5;
-      vertex.z += Math.random()*5-2.5;
-    };
 
-    this.snowBall = new THREE.Mesh( geo, new THREE.MeshPhongMaterial({ perPixel:true, color: 0xffffff, ambient:0xffffff }));
+    var reflectionMap = THREE.ImageUtils.loadTexture('assets/images/snow-reflection2.jpg');
+    reflectionMap.repeat.x = reflectionMap.repeat.y = 1
+    reflectionMap.wrapT = reflectionMap.wrapS = THREE.RepeatWrapping;
+
+
+    var ballMap = THREE.ImageUtils.loadTexture('assets/images/snow-diffuse2.jpg');
+    ballMap.wrapT = ballMap.wrapS = THREE.RepeatWrapping;
+
+    this.snowBall = new THREE.Mesh( geo, new THREE.MeshPhongMaterial({ map:ballMap,perPixel:true, color: 0xffffff, ambient:0xffffff, specularMap: reflectionMap, specular:0xffffff,shininess:30 }));
     this.snowBall.castShadow = true;
     this.snowBall.receiveShadow = false;
     this.snowBall.position.y = 75;
@@ -194,12 +196,9 @@ mixin(Builder.prototype, {
     this.trailTexture = new THREE.Texture(this.trailCanvas.el);
     //this.trailTexture.mapping = THREE.UVMapping;
 
-    /*var reflectionMap = THREE.ImageUtils.loadTexture('assets/images/snow-reflection.jpg');
-    reflectionMap.repeat.x = reflectionMap.repeat.y = 1
-    reflectionMap.wrapT = reflectionMap.wrapS = THREE.RepeatWrapping;
-    reflectionMap.needsUpdate = true;
+    /*
 */
-    var diffuseMap = THREE.ImageUtils.loadTexture('assets/images/snow-diffuse.jpg');
+    var diffuseMap = THREE.ImageUtils.loadTexture('assets/images/snow-diffuse2.jpg');
     diffuseMap.wrapT = diffuseMap.wrapS = THREE.RepeatWrapping;
 
 
@@ -286,6 +285,8 @@ mixin(Builder.prototype, {
 
 
     if( this.snowBall.position.distanceTo(this._prevSnowBallPos ) > 0.3 ) {
+
+      settings.ballRadius += 0.01;
       this.trailCanvas.setTrailRadius( (settings.ballRadius*0.75)/2000*1024);
       this.trailCanvas.update((this.snowBall.position.x/this.groundSize.width)*1024+512,(this.snowBall.position.z/this.groundSize.height)*1024 + 512)
       this.trailTexture.needsUpdate = true;
@@ -296,10 +297,15 @@ mixin(Builder.prototype, {
     //this.snowBall.scale.set( settings.ballScale,settings.ballScale,settings.ballScale);
 
     var vertices = this.snowBall.geometry.vertices;
-    var vertex;
+    var vertex, worldVector;
     for (var i = vertices.length - 1; i >= 0; i--) {
       vertex = vertices[i];
-      vertex.setLength(settings.ballRadius);
+
+      worldVector = this.snowBall.localToWorld( vertex.clone() );
+
+      if( worldVector.y < 0 ) {
+        vertex.setLength(settings.ballRadius);
+      }
      /* vertex.y += Math.random()*15-7.5;
       vertex.x += Math.random()*15-7.5;
       vertex.z += Math.random()*15-7.5;*/
