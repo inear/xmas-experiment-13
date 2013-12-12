@@ -39,6 +39,7 @@ uniform vec3 ambientLightColor;
 #endif
 
 varying vec3 mPosition;
+varying vec3 vWorldPosition;
 varying vec3 vViewPosition;
 varying vec3 vNormal;
 varying vec3 mNormal;
@@ -133,7 +134,8 @@ void main()
         totalSpecular += dirSpecular;
     #endif
 
-    vec3 colorBase = vec3(0.94,0.94,1.0);
+    vec3 colorBase = mix(vec3(0.94,0.94,1.0),vec3(0.64,0.64,0.6),1.0-texture2D( bumpMap, vUv ).x);
+
 
     vec3 DiffuseColour = totalDiffuse*texture2D( map, vUv*3.0 ).xyz*colorBase;
     gl_FragColor = vec4(( totalDiffuse * DiffuseColour) + totalSpecular + ambientLightColor * ambient,1.0);

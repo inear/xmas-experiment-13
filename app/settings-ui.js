@@ -1,3 +1,5 @@
+'use strict';
+
 var settings = require('./settings');
 
 function SettingsUI(){

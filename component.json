@@ -19,10 +19,12 @@
     "base-css"
   ],
   "scripts": [
+    "app/utils/object-pool.js",
     "app/utils/detector.js",
     "app/settings.js",
     "app/settings-ui.js",
     "app/builder.js",
+    "app/snow-chunk.js",
     "app/trail.js",
     "app/index.js"
   ]

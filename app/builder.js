@@ -1,3 +1,5 @@
+'use strict';
+
 module.exports = Builder;
 
 var DomEventMap = require('dom-event-map');
@@ -8,6 +10,8 @@ var settings = require('./settings');
 var SettingsUI = require('./settings-ui');
 var Trail = require('./trail');
 var detector = require('./utils/detector');
+var ObjectPool = require('./utils/object-pool');
+var SnowChunk = require('./snow-chunk');
 
 var SHADOW_MAP_WIDTH = 1024*2;
 var SHADOW_MAP_HEIGHT = 1024*2;
@@ -32,8 +36,11 @@ function Builder() {
 
   this.trailCanvas = new Trail();
 
+  this._initSnowChunks();
 
   this.settingsUI = new SettingsUI();
+
+ // this._spawnSnowChunk = this._spawnSnowChunk.bind(this);
 }
 
 DomEventMap(Builder.prototype);
@@ -64,6 +71,27 @@ mixin(Builder.prototype, {
     //this._cameraUpdated();
     //this._colorsUpdated();
     //this._lightsUpdated();
+  },
+
+  _initSnowChunks: function(){
+
+    this._snowChunks = [];
+
+    ObjectPool.prototype.createObject = function(){
+      var chunk = new SnowChunk();
+      return chunk;
+    }
+
+    this._snowChunksPool = new ObjectPool();
+  },
+
+  _spawnSnowChunk: function(){
+
+    var newChunk = this._snowChunksPool.getObject();
+    newChunk.add(this.scene);
+    newChunk.mesh.position.copy(this.snowBall.position ).sub(new THREE.Vector3(Math.random()*10,settings.ballRadius*0.5,0)).add(this.moveDir.negate().multiplyScalar(44));
+
+    this._snowChunks.push(newChunk);
   },
 
   _addEventListeners: function(){
@@ -174,21 +202,35 @@ mixin(Builder.prototype, {
   _createSceneObjects: function(){
 
     var geo = new THREE.IcosahedronGeometry(settings.ballRadius,3);
+    //geo = new THREE.SphereGeometry(settings.ballRadius,30,30)
     geo.isDynamic = true;
     var vertices = geo.vertices;
     var vertex;
+
+    for (var i = vertices.length - 1; i >= 0; i--) {
+      vertex = vertices[i];
+      vertex.offset = new THREE.Vector3();
+      vertex.offset.y = Math.random()*4-2;
+      vertex.offset.x = Math.random()*4-2;
+      vertex.offset.z = Math.random()*4-2;
+    };
 
     var reflectionMap = THREE.ImageUtils.loadTexture('assets/images/snow-reflection2.jpg');
     reflectionMap.repeat.x = reflectionMap.repeat.y = 4
     reflectionMap.wrapT = reflectionMap.wrapS = THREE.RepeatWrapping;
 
 
-    var ballMap = THREE.ImageUtils.loadTexture('assets/images/snow-diffuse2.jpg');
-    ballMap.wrapT = ballMap.wrapS = THREE.RepeatWrapping;
+    var ballMap = THREE.ImageUtils.loadTexture('assets/images/snow-diffuse-spherical.jpg');
+    ballMap.magFilter = ballMap.minFilter = THREE.LinearFilter;
 
-    var ballBumpMap = THREE.ImageUtils.loadTexture('assets/images/ball-bump.jpg');
+    var ballBumpMap = THREE.ImageUtils.loadTexture('assets/images/ball-bump-spherical.jpg');
+    ballBumpMap.repeat.x = ballBumpMap.repeat.y = 1.01;
+    ballBumpMap.magFilter = ballBumpMap.minFilter = THREE.LinearFilter;
+    ballBumpMap.wrapT = ballBumpMap.wrapS = THREE.RepeatWrapping;
 
-    this.snowBall = new THREE.Mesh( geo, new THREE.MeshPhongMaterial({ map:ballMap,perPixel:true, color: 0xffffff, ambient:0xffffff, bumpMap: ballBumpMap, bumpScale:3, specularMap: reflectionMap, specular:0xffffff,shininess:10 }));
+    this.snowballMaterial = new THREE.MeshPhongMaterial({ shading:THREE.FlatShaded,map:ballMap,perPixel:true, color: 0xffffff, ambient:0xffffff, bumpMap: ballBumpMap, bumpScale:3, specularMap: reflectionMap, specular:0xffffff,shininess:5 });
+
+    this.snowBall = new THREE.Mesh( geo, this.snowballMaterial);
     this.snowBall.castShadow = true;
     this.snowBall.receiveShadow = false;
     this.snowBall.position.y = 75;
@@ -212,7 +254,7 @@ mixin(Builder.prototype, {
 
     var finalSnowUniform = THREE.UniformsUtils.merge( [THREE.ShaderLib["phong"].uniforms, snowUniforms] );
     finalSnowUniform.map.value = diffuseMap;
-    finalSnowUniform.shininess.value = 100;
+    finalSnowUniform.shininess.value = 10;
     finalSnowUniform.bumpMap.value = this.trailTexture;
     finalSnowUniform.bumpScale.value = 3;
 
@@ -232,19 +274,20 @@ mixin(Builder.prototype, {
 
     this.ground = new THREE.Mesh( groundGeo, snowMaterial)
     this.ground.receiveShadow = true;
-    this.ground.castShadow = true;
+    this.ground.castShadow = false;
     this.ground.rotation.x = - 90 * Math.PI / 180;
     this.ground.position.y = 0;
 
     var vertices = groundGeo.vertices;
     var vertex;
-    for (var i = vertices.length - 1; i >= 0; i--) {
+    /*for (var i = vertices.length - 1; i >= 0; i--) {
       vertex = vertices[i];
-     /* vertex.y += Math.random()*15-7.5;
-      vertex.x += Math.random()*15-7.5;
-      vertex.z += Math.random()*15-7.5;*/
+      vertex.offset = new THREE.Vector3();
+      vertex.offset.y += Math.random()*15-7.5;
+      vertex.offset.x += Math.random()*15-7.5;
+      vertex.offset.z += Math.random()*15-7.5;
     };
-
+*/
    // groundGeo.computeFaceNormals();
    // groundGeo.computeVertexNormals();
 
@@ -288,6 +331,8 @@ mixin(Builder.prototype, {
 
     if( this.snowBall.position.distanceTo(this._prevSnowBallPos ) > 0.3 ) {
 
+      //this._spawnSnowChunk();
+
       if( settings.ballRadius < 65 ) {
         settings.ballRadius += 0.01;
       }
@@ -299,7 +344,7 @@ mixin(Builder.prototype, {
     this._prevSnowBallPos.copy(this.snowBall.position);
 
     //this.snowBall.scale.set( settings.ballScale,settings.ballScale,settings.ballScale);
-
+    
     var vertices = this.snowBall.geometry.vertices;
     var vertex, worldVector;
     for (var i = vertices.length - 1; i >= 0; i--) {
@@ -308,21 +353,28 @@ mixin(Builder.prototype, {
       worldVector = this.snowBall.localToWorld( vertex.clone() );
 
       //if( this.up.negate().dot( this.snowBall.position.clone().sub(worldVector).normalize()) < 0.2 ) {
-      if( worldVector.y < -12 || worldVector.distanceTo(this.snowBall.position)<settings.ballRadius-10 ) {
+      //if( (worldVector.y < this.snowBall.position.y - settings.ballRadius + 10) || (vertex.length() < settings.ballRadius-3) ) {
+
         vertex.hasUpdated = true;
-        vertex.setLength(settings.ballRadius + Math.random()*2.3);
-      }
+        //vertex.setLength(settings.ballRadius + Math.random()*2.3);
+        vertex.setLength(settings.ballRadius+vertex.offset.y*settings.ballRadius/60);
+        
+      /*}
       else if( vertex.hasUpdated && worldVector.y > 5 ) {
         vertex.hasUpdated = false;
-      }
+      }*/
      /* vertex.y += Math.random()*15-7.5;
       vertex.x += Math.random()*15-7.5;
       vertex.z += Math.random()*15-7.5;*/
     };
     this.snowBall.geometry.verticesNeedUpdate = true;
+    //this.snowBall.geometry.computeFaceNormals();
+    //this.snowBall.geometry.computeVertexNormals();
 
     this.snowBall.position.y = settings.ballRadius*2 - 20-40*settings.ballRadius/40;
     //highlight faces
+
+    this.snowballMaterial.bumpScale = 5*settings.ballRadius/40;
 
     this.camera.position.lerp(this.snowBall.position.clone().add( this._cameraOffset ),0.1);
     //this.camera.lookAt(this.scene.position)
@@ -362,5 +414,14 @@ mixin(Builder.prototype, {
 
   _dispose: function() {
     this.unmapAllListeners();
+
+    //return all arrows to pool
+    for (i = this._snowChunks.length - 1; i >= 0; i--) {
+      this._snowChunks[i].remove();
+      this._snowChunksPool.returnObject( this._snowChunks[i].poolId );
+    };
+
+    this._snowChunks.length = 0;
+
   }
 });
