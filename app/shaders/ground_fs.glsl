@@ -45,6 +45,7 @@ varying vec3 vNormal;
 varying vec3 mNormal;
 varying vec2 vUv;
 
+uniform float time;
 uniform float shininess;
 uniform vec3 specular;
 uniform vec3 diffuse;
@@ -96,6 +97,8 @@ void main()
 
     vec3 normal = normalize( vNormal );
 
+    normal = normal;
+
     //bump
     normal = perturbNormalArb( -vViewPosition, normal, dHdxy_fwd() );
 
@@ -121,6 +124,7 @@ void main()
             float dirSpecularWeight = max( pow( dirDotNormalHalf, shininess ), 0.0 );
 
             dirSpecular += specular * directionalLightColor[ i ] * dirSpecularWeight * dirDiffuseWeight;
+            
 
         }
 
@@ -134,11 +138,18 @@ void main()
         totalSpecular += dirSpecular;
     #endif
 
-    vec3 colorBase = mix(vec3(0.94,0.94,1.0),vec3(0.64,0.64,0.6),1.0-texture2D( bumpMap, vUv ).x);
+    //vec3 colorBase = mix(vec3(0.94,0.94,1.0),vec3(0.64,0.64,0.6),1.0-texture2D( bumpMap, vUv ).x);
+    vec3 colorBase = mix(vec3(1.0,1.0,1.0),vec3(0.74,0.74,0.7),1.0-texture2D( bumpMap, vUv ).x);
+    //vec3 colorBase = vec3(1.0,1.0,1.0);
 
 
     vec3 DiffuseColour = totalDiffuse*texture2D( map, vUv*3.0 ).xyz*colorBase;
     gl_FragColor = vec4(( totalDiffuse * DiffuseColour) + totalSpecular + ambientLightColor * ambient,1.0);
+
+    float f = 1.0 * abs( dot( normal, normalize( vWorldPosition ) ) );
+    f = 0.1 * ( 1. - smoothstep( 0.0, 1., f ) );
+
+    gl_FragColor.rgb += vec3(f);
 
     #ifdef USE_SHADOWMAP
 

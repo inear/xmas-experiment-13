@@ -25,6 +25,7 @@ function Builder() {
   this._mouse2D = new THREE.Vector2();
   this._normalizedMouse2D = new THREE.Vector2();
   this._prevSnowBallPos = new THREE.Vector3();
+  this._ballOffsetY = 0;
   this._cameraOffset = new THREE.Vector3(0,300,300);
   this._mouseMoved = false;
   this._steerIsActive = false;
@@ -116,10 +117,10 @@ mixin(Builder.prototype, {
         self._keyStatus[dir] = true;
         self._steerIsActive = true;
 
-        if( this._balls.length === 0 ) {
-          this._createNewBall();
+        if( self._balls.length === 0 ) {
+          self._createNewBall();
         }
-    
+
       }
 
       function keyUp() {
@@ -256,7 +257,7 @@ mixin(Builder.prototype, {
     reflectionMap.wrapT = reflectionMap.wrapS = THREE.RepeatWrapping;
 
 
-    var ballMap = THREE.ImageUtils.loadTexture('assets/images/snow-diffuse-spherical.jpg');
+    var ballMap = THREE.ImageUtils.loadTexture('assets/images/snow-diffuse-spherical3.jpg');
     ballMap.magFilter = ballMap.minFilter = THREE.LinearFilter;
 
     var ballBumpMap = THREE.ImageUtils.loadTexture('assets/images/ball-bump-spherical.jpg');
@@ -276,14 +277,15 @@ mixin(Builder.prototype, {
 
     /*
 */
-    var diffuseMap = THREE.ImageUtils.loadTexture('assets/images/snow-diffuse2.jpg');
+    var diffuseMap = THREE.ImageUtils.loadTexture('assets/images/snow-diffuse4.jpg');
     diffuseMap.wrapT = diffuseMap.wrapS = THREE.RepeatWrapping;
 
 
     var groundGeo = new THREE.PlaneGeometry(this.groundSize.width,this.groundSize.height,150,150);
 
     var snowUniforms = {
-      uDisplacementScale: { type: "f", value: 67.1 }
+      uDisplacementScale: { type: "f", value: 67.1 },
+      time: { type: "f", value: 0 }
     };
 
     var finalSnowUniform = THREE.UniformsUtils.merge( [THREE.ShaderLib["phong"].uniforms, snowUniforms] );
@@ -291,6 +293,7 @@ mixin(Builder.prototype, {
     finalSnowUniform.shininess.value = 10;
     finalSnowUniform.bumpMap.value = this.trailTexture;
     finalSnowUniform.bumpScale.value = 3;
+    
 
     var params = {
         uniforms:  finalSnowUniform,
@@ -334,14 +337,18 @@ mixin(Builder.prototype, {
     var snowBall = new THREE.Mesh( this.snowBallGeo, this.snowballMaterial);
     snowBall.castShadow = true;
     snowBall.receiveShadow = false;
-    snowBall.position.y = 75;
+    snowBall.position.y = 40;
 
     this.scene.add(snowBall);
 
     this._balls.push(snowBall);
     this._currentBallSelected = this._balls.length-1;
 
-    TweenMax.to( settings,0.7,{ballRadius:20});
+    this.momentumX = this._normalizedMouse2D.x*5.5;
+    this.momentumZ = this._normalizedMouse2D.y*5.5;
+
+    TweenMax.fromTo( settings,3.7,{ballRadius:5},{ballRadius:20});
+    TweenMax.fromTo( this,3.7,{_ballOffsetY:10},{_ballOffsetY:0});
 
   },
 
@@ -437,7 +444,9 @@ mixin(Builder.prototype, {
     //snowBall.geometry.computeFaceNormals();
     //snowBall.geometry.computeVertexNormals();
 
-    snowBall.position.y = settings.ballRadius*2 - 20-40*settings.ballRadius/40;
+    
+    snowBall.position.y = this._ballOffsetY + settings.ballRadius*2 - 20-40*settings.ballRadius/40;
+    
     //highlight faces
 
     this.snowballMaterial.bumpScale = 5*settings.ballRadius/40;
@@ -449,6 +458,7 @@ mixin(Builder.prototype, {
     var delta = this._clock.getDelta();
     var time = this._clock.getElapsedTime() * 10;
     
+      this.ground.material.uniforms.time.value += delta/100;
     
     if (isNaN(delta) || delta > 1000 || delta === 0 ) {
       delta = 1000/60;

@@ -18,7 +18,7 @@ function Trail(){
 var p = Trail.prototype;
 
 p.setTrailRadius = function(value){
-  this.radius = value;
+  this.radius = value+2;
 }
 
 p.update = function(x,y) {
