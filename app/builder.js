@@ -6,6 +6,7 @@ var DomEventMap = require('dom-event-map');
 var raf = require('raf');
 var mixin = require('mixin');
 var debug = require('debug');
+var forEach = require('for-each');
 var settings = require('./settings');
 var SettingsUI = require('./settings-ui');
 var Trail = require('./trail');
@@ -26,12 +27,14 @@ function Builder() {
   this._prevSnowBallPos = new THREE.Vector3();
   this._cameraOffset = new THREE.Vector3(0,300,300);
   this._mouseMoved = false;
+  this._steerIsActive = false;
+  this._keyStatus = Object.call(this);
   //bind scope
   this._draw = this._draw.bind(this);
   this._onMouseMove = this._onMouseMove.bind(this);
   this._onMouseDown = this._onMouseDown.bind(this);
   this._onMouseUp = this._onMouseUp.bind(this);
-
+  
   this.sizeRatio = 1;
 
   this.trailCanvas = new Trail();
@@ -62,15 +65,12 @@ mixin(Builder.prototype, {
     this._init3D();
     this._initLights();
     this._createSceneObjects();
-    //this._initUI();
-
+    
     this._onResize();
     this._draw();
 
     this._addEventListeners();
-    //this._cameraUpdated();
-    //this._colorsUpdated();
-    //this._lightsUpdated();
+    
   },
 
   _initSnowChunks: function(){
@@ -95,9 +95,33 @@ mixin(Builder.prototype, {
   },
 
   _addEventListeners: function(){
+    
+    var self = this;
+
     this.mapListener(this._stage, 'mouseup', this._onMouseUp);
     this.mapListener(this._stage, 'mousedown', this._onMouseDown);
     this.mapListener(this._stage, 'mousemove', this._onMouseMove);
+
+    var list = ['left','right','up','down'];
+
+    forEach(list,function(dir){
+
+      Mousetrap.bind(dir, keyDown, 'keydown');
+      Mousetrap.bind(dir, keyUp, 'keyup');   
+
+      function keyDown() {
+        self._keyStatus[dir] = true;
+        self._steerIsActive = true;
+      }
+
+      function keyUp() {
+        self._keyStatus[dir] = false;
+
+        //set steering flag
+        self._steerIsActive = self._keyStatus['left'] || self._keyStatus['right'] || self._keyStatus['down'] || self._keyStatus['up'];
+        
+      }
+    })
   },
 
   _onMouseMove: function( evt ){
@@ -312,6 +336,29 @@ mixin(Builder.prototype, {
       var rotateSpeedFactor = 70/100*(100-settings.ballRadius);
       this.momentumX += (this._normalizedMouse2D.x*2.5 - this.momentumX)/rotateSpeedFactor;
       this.momentumZ += (this._normalizedMouse2D.y*2.5 - this.momentumZ)/rotateSpeedFactor;
+    }
+    else if( this._steerIsActive ) {
+
+      if( this._keyStatus['left'] ) {
+        this.momentumX -= 0.1;
+      }
+      
+      if( this._keyStatus['right'] ) {
+        this.momentumX += 0.1;
+      }
+      
+      if( this._keyStatus['up'] ) {
+        this.momentumZ -= 0.1;
+      }
+      
+      if( this._keyStatus['down'] ) {
+        this.momentumZ += 0.1;
+      }
+
+      
+      this.momentumZ = Math.max(-2,Math.min(2,this.momentumZ));
+      this.momentumX = Math.max(-2,Math.min(2,this.momentumX));
+      
     }
     else {
       this.momentumX *= 0.9
