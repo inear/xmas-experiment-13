@@ -1,4 +1,4 @@
 module.exports = {
-    ballRadius:20,
+    ballRadius:0,
     ballScale:1
 }

@@ -37,6 +37,9 @@ function Builder() {
   
   this.sizeRatio = 1;
 
+  this._balls = [];
+  this._currentBallSelected = 0;
+
   this.trailCanvas = new Trail();
 
   this._initSnowChunks();
@@ -87,11 +90,11 @@ mixin(Builder.prototype, {
 
   _spawnSnowChunk: function(){
 
-    var newChunk = this._snowChunksPool.getObject();
+    /*var newChunk = this._snowChunksPool.getObject();
     newChunk.add(this.scene);
     newChunk.mesh.position.copy(this.snowBall.position ).sub(new THREE.Vector3(Math.random()*10,settings.ballRadius*0.5,0)).add(this.moveDir.negate().multiplyScalar(44));
 
-    this._snowChunks.push(newChunk);
+    this._snowChunks.push(newChunk);*/
   },
 
   _addEventListeners: function(){
@@ -112,6 +115,11 @@ mixin(Builder.prototype, {
       function keyDown() {
         self._keyStatus[dir] = true;
         self._steerIsActive = true;
+
+        if( this._balls.length === 0 ) {
+          this._createNewBall();
+        }
+    
       }
 
       function keyUp() {
@@ -137,6 +145,10 @@ mixin(Builder.prototype, {
 
   _onMouseDown: function( evt ){
     this._mouseIsDown = true;
+
+    if( this._balls.length === 0 ) {
+      this._createNewBall();
+    }
   },
 
   _onMouseUp: function( evt ){
@@ -148,7 +160,7 @@ mixin(Builder.prototype, {
     this.camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 6000 );
     this.scene = new THREE.Scene();
 
-    this.camera.position.set(0,1700,1700);
+    this.camera.position.copy( this._cameraOffset );
     this.camera.lookAt( this.scene.position );
     //this.scene.overrideMaterial = new THREE.MeshBasicMaterial({wireframe:true,color:0x333333});
 
@@ -225,10 +237,10 @@ mixin(Builder.prototype, {
 
   _createSceneObjects: function(){
 
-    var geo = new THREE.IcosahedronGeometry(settings.ballRadius,3);
+    this.snowBallGeo = new THREE.IcosahedronGeometry(settings.ballRadius,3);
     //geo = new THREE.SphereGeometry(settings.ballRadius,30,30)
-    geo.isDynamic = true;
-    var vertices = geo.vertices;
+    this.snowBallGeo.isDynamic = true;
+    var vertices = this.snowBallGeo.vertices;
     var vertex;
 
     for (var i = vertices.length - 1; i >= 0; i--) {
@@ -248,20 +260,18 @@ mixin(Builder.prototype, {
     ballMap.magFilter = ballMap.minFilter = THREE.LinearFilter;
 
     var ballBumpMap = THREE.ImageUtils.loadTexture('assets/images/ball-bump-spherical.jpg');
-    ballBumpMap.repeat.x = ballBumpMap.repeat.y = 1.01;
+    ballBumpMap.repeat.x = ballBumpMap.repeat.y = 1;
     ballBumpMap.magFilter = ballBumpMap.minFilter = THREE.LinearFilter;
     ballBumpMap.wrapT = ballBumpMap.wrapS = THREE.RepeatWrapping;
 
-    this.snowballMaterial = new THREE.MeshPhongMaterial({ shading:THREE.FlatShaded,map:ballMap,perPixel:true, color: 0xffffff, ambient:0xffffff, bumpMap: ballBumpMap, bumpScale:3, specularMap: reflectionMap, specular:0xffffff,shininess:5 });
+    this.snowballMaterial = new THREE.MeshPhongMaterial({ map:ballMap,perPixel:true, color: 0xffffff, ambient:0xffffff, bumpMap: ballBumpMap, bumpScale:3, specularMap: reflectionMap, specular:0xffffff,shininess:5 });
 
-    this.snowBall = new THREE.Mesh( geo, this.snowballMaterial);
-    this.snowBall.castShadow = true;
-    this.snowBall.receiveShadow = false;
-    this.snowBall.position.y = 75;
-
-    this.scene.add(this.snowBall);
 
     this.trailTexture = new THREE.Texture(this.trailCanvas.el);
+
+    this.trailCanvas.setTrailRadius(0)
+    this.trailCanvas.update(512,512);
+    this.trailTexture.needsUpdate = true;
     //this.trailTexture.mapping = THREE.UVMapping;
 
     /*
@@ -319,16 +329,25 @@ mixin(Builder.prototype, {
     this.scene.add(this.ground);
   },
 
-  _draw: function(){
-    var delta = this._clock.getDelta();
-    var time = this._clock.getElapsedTime() * 10;
+  _createNewBall: function(){
+    
+    var snowBall = new THREE.Mesh( this.snowBallGeo, this.snowballMaterial);
+    snowBall.castShadow = true;
+    snowBall.receiveShadow = false;
+    snowBall.position.y = 75;
 
-    if (isNaN(delta) || delta > 1000 || delta === 0 ) {
-      delta = 1000/60;
-    }
-    this.delta = delta;
+    this.scene.add(snowBall);
 
-    //this.camera.rotation.y += 0.1;
+    this._balls.push(snowBall);
+    this._currentBallSelected = this._balls.length-1;
+
+    TweenMax.to( settings,0.7,{ballRadius:20});
+
+  },
+
+  _updateBall: function( index ){
+
+    var snowBall = this._balls[index];
 
     var rotateAmountFactor = 0.05*(80-settings.ballRadius)/40;
 
@@ -354,7 +373,6 @@ mixin(Builder.prototype, {
       if( this._keyStatus['down'] ) {
         this.momentumZ += 0.1;
       }
-
       
       this.momentumZ = Math.max(-2,Math.min(2,this.momentumZ));
       this.momentumX = Math.max(-2,Math.min(2,this.momentumX));
@@ -370,13 +388,14 @@ mixin(Builder.prototype, {
     var rotationDir = new THREE.Vector3().crossVectors(this.moveDir, this.up);
     var amount = Math.sqrt( this.momentumX*rotateAmountFactor * this.momentumX*rotateAmountFactor + this.momentumZ*rotateAmountFactor * this.momentumZ*rotateAmountFactor);
 
-    this._rotateAroundWorldAxis( this.snowBall, rotationDir,amount)
+    this._rotateAroundWorldAxis( snowBall, rotationDir,amount)
 
-    this.snowBall.position.x += this.momentumX;
-    this.snowBall.position.z += this.momentumZ;
+    
+    snowBall.position.x += this.momentumX;
+    snowBall.position.z += this.momentumZ;
 
 
-    if( this.snowBall.position.distanceTo(this._prevSnowBallPos ) > 0.3 ) {
+    if( snowBall.position.distanceTo(this._prevSnowBallPos ) > 0.3 ) {
 
       //this._spawnSnowChunk();
 
@@ -384,23 +403,23 @@ mixin(Builder.prototype, {
         settings.ballRadius += 0.01;
       }
       this.trailCanvas.setTrailRadius( (settings.ballRadius*0.75)/2000*1024);
-      this.trailCanvas.update((this.snowBall.position.x/this.groundSize.width)*1024+512,(this.snowBall.position.z/this.groundSize.height)*1024 + 512)
+      this.trailCanvas.update((snowBall.position.x/this.groundSize.width)*1024+512,(snowBall.position.z/this.groundSize.height)*1024 + 512)
       this.trailTexture.needsUpdate = true;
     }
 
-    this._prevSnowBallPos.copy(this.snowBall.position);
+    this._prevSnowBallPos.copy(snowBall.position);
 
-    //this.snowBall.scale.set( settings.ballScale,settings.ballScale,settings.ballScale);
+    //snowBall.scale.set( settings.ballScale,settings.ballScale,settings.ballScale);
     
-    var vertices = this.snowBall.geometry.vertices;
+    var vertices = snowBall.geometry.vertices;
     var vertex, worldVector;
     for (var i = vertices.length - 1; i >= 0; i--) {
       vertex = vertices[i];
 
-      worldVector = this.snowBall.localToWorld( vertex.clone() );
+      worldVector = snowBall.localToWorld( vertex.clone() );
 
-      //if( this.up.negate().dot( this.snowBall.position.clone().sub(worldVector).normalize()) < 0.2 ) {
-      //if( (worldVector.y < this.snowBall.position.y - settings.ballRadius + 10) || (vertex.length() < settings.ballRadius-3) ) {
+      //if( this.up.negate().dot( snowBall.position.clone().sub(worldVector).normalize()) < 0.2 ) {
+      //if( (worldVector.y < snowBall.position.y - settings.ballRadius + 10) || (vertex.length() < settings.ballRadius-3) ) {
 
         vertex.hasUpdated = true;
         //vertex.setLength(settings.ballRadius + Math.random()*2.3);
@@ -414,16 +433,34 @@ mixin(Builder.prototype, {
       vertex.x += Math.random()*15-7.5;
       vertex.z += Math.random()*15-7.5;*/
     };
-    this.snowBall.geometry.verticesNeedUpdate = true;
-    //this.snowBall.geometry.computeFaceNormals();
-    //this.snowBall.geometry.computeVertexNormals();
+    snowBall.geometry.verticesNeedUpdate = true;
+    //snowBall.geometry.computeFaceNormals();
+    //snowBall.geometry.computeVertexNormals();
 
-    this.snowBall.position.y = settings.ballRadius*2 - 20-40*settings.ballRadius/40;
+    snowBall.position.y = settings.ballRadius*2 - 20-40*settings.ballRadius/40;
     //highlight faces
 
     this.snowballMaterial.bumpScale = 5*settings.ballRadius/40;
 
-    this.camera.position.lerp(this.snowBall.position.clone().add( this._cameraOffset ),0.1);
+    this.camera.position.lerp(snowBall.position.clone().add( this._cameraOffset ),0.1);
+  },
+
+  _draw: function(){
+    var delta = this._clock.getDelta();
+    var time = this._clock.getElapsedTime() * 10;
+    
+    
+    if (isNaN(delta) || delta > 1000 || delta === 0 ) {
+      delta = 1000/60;
+    }
+    this.delta = delta;
+
+    //this.camera.rotation.y += 0.1;
+
+    if( this._balls.length  ) {
+      this._updateBall( this._currentBallSelected );
+    }
+
     //this.camera.lookAt(this.scene.position)
     this.renderer.render( this.scene, this.camera );
 
