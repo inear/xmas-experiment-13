@@ -36,7 +36,9 @@ function Builder() {
   this._steerIsActive = false;
   this._keyStatus = Object.call(this);
   //bind scope
+
   this._draw = this._draw.bind(this);
+  this._onResize = this._onResize.bind(this);
   this._onMouseMove = this._onMouseMove.bind(this);
   this._onMouseDown = this._onMouseDown.bind(this);
   this._onMouseUp = this._onMouseUp.bind(this);
@@ -72,10 +74,11 @@ mixin(Builder.prototype, {
     this._state = STATE_CREATING_BALLS;
 
     this._init3D();
+    this._onResize();
     this._initLights();
     this._createSceneObjects();
 
-    this._onResize();
+
     this._draw();
 
     this._addEventListeners();
@@ -107,6 +110,7 @@ mixin(Builder.prototype, {
 
     var self = this;
 
+    this.mapListener(window, 'resize', this._onResize);
     this.mapListener(window, 'mouseup', this._onMouseUp);
     this.mapListener(this._stage, 'mousedown', this._onMouseDown);
     this.mapListener(this._stage, 'mousemove', this._onMouseMove);
@@ -201,20 +205,21 @@ mixin(Builder.prototype, {
 
   _init3D: function(){
 
-    this.camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 6000 );
+    this.camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 7000 );
     this.scene = new THREE.Scene();
 
     this.camera.position.copy( this._cameraOffset );
     this.camera.lookAt( this.scene.position );
+    this.scene.add(this.camera);
     //this.scene.overrideMaterial = new THREE.MeshBasicMaterial({wireframe:true,color:0x333333});
 
     if( detector.isTouchDevice && detector.isMobile ) {
       this.sizeRatio = 2.5;
     }
 
-    this.renderer = new THREE.WebGLRenderer({canvas: document.getElementById('builderCanvas'),antialias:false});
+    this.renderer = new THREE.WebGLRenderer({canvas: document.getElementById('builderCanvas'),antialias:true});
     this.renderer.sortElements = false;
-    this.renderer.setClearColor(0xffffff);
+    this.renderer.setClearColor(0xffffff,1);
 
     this.renderer.gammaInput = true;
     this.renderer.gammaOutput = true;
@@ -229,7 +234,7 @@ mixin(Builder.prototype, {
     //this.renderer.shadowMapDebug = true;
     //this.renderer.shadowMapCascade = true;
 
-    //this.scene.fog = new THREE.Fog( this.properties.fogColor, this.properties.fogNear, this.properties.fogFar );
+    this.scene.fog = new THREE.Fog( 0xffffff, 1, 5000 );
 
     if (this.sizeRatio > 1) {
       this.renderer.domElement.style.webkitTransform = "scale3d("+this.sizeRatio+", "+this.sizeRatio+", 1)";
@@ -243,14 +248,14 @@ mixin(Builder.prototype, {
     this.ambientLight = new THREE.AmbientLight( 0x777777, 0.4 );
     this.scene.add(this.ambientLight);
 
-    var hemiLight = new THREE.HemisphereLight( 0xffffff,0xdce9f8 , 0.7 ); 
+    var hemiLight = new THREE.HemisphereLight( 0xfefefe,0xdce9f8 , 0.6 );
     this.scene.add(hemiLight);
 
     //this.pointLight = new THREE.PointLight( 0xffffff, 0.8,1000);
     //this.pointLight.position.set(0,1025,-1000);
     //this.scene.add(this.pointLight);
 
-    this.dirLight = new THREE.DirectionalLight( 0xffffff, 1);
+    this.dirLight = new THREE.DirectionalLight( 0xffffff, 0.99);
     this.dirLight.position.set( -500, 1400, -200  );
 
     this.dirLight.shadowMapWidth = 2048;
@@ -267,14 +272,6 @@ mixin(Builder.prototype, {
     this.dirLight.shadowCameraBottom = -1224;
     this.dirLight.shadowCameraVisible = false;
 
-    /*this.dirLight.shadowCascadeNearZ = [ -1.000, 0.9, 0.975 ];
-    this.dirLight.shadowCascadeFarZ  = [  0.9, 0.975, 1.000 ];
-    this.dirLight.shadowCascadeWidth = [ 2048, 2048, 2048 ];
-    this.dirLight.shadowCascadeHeight = [ 2048, 2048, 2048 ];
-    this.dirLight.shadowCascadeBias = [ 0.00005, 0.000065, 0.000065 ];
-
-    this.dirLight.shadowCascadeOffset.set( 0, 0, -10 );
-*/
     this.dirLight.castShadow = true;
 
     this.scene.add(this.dirLight);
@@ -287,11 +284,7 @@ mixin(Builder.prototype, {
     this.trailTexture = new THREE.Texture(this.trailCanvas.el);
     this.trailTexture.needsUpdate = true
     this.trailCanvas.update(0,512,512,1);
-    //this.trailTexture.needsUpdate = true;
-    //this.trailTexture.mapping = THREE.UVMapping;
 
-    /*
-*/
     var diffuseMap = THREE.ImageUtils.loadTexture('assets/images/snow-diffuse4.jpg');
     diffuseMap.wrapT = diffuseMap.wrapS = THREE.RepeatWrapping;
 
@@ -331,6 +324,51 @@ mixin(Builder.prototype, {
     this.ground.position.y = 0;
 
     this.scene.add(this.ground);
+
+
+    //distance material
+    var finalSnowUniform2 = THREE.ShaderLib["phong"].uniforms;
+    finalSnowUniform2.map.value = diffuseMap;
+    finalSnowUniform2.shininess.value = 10;
+
+    //create empty canvas for this material
+    var canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 1024;
+    canvas.getContext("2d").fillStyle = 'white';
+    canvas.getContext("2d").fillRect(0, 0, 1024, 1024);
+    var trailTexture2 = new THREE.Texture(canvas);
+    trailTexture2.needsUpdate = true
+    finalSnowUniform2.bumpMap.value = trailTexture2;
+
+    var largeMaterial = new THREE.ShaderMaterial({
+      uniforms:  finalSnowUniform2,
+      vertexShader: require('./shaders/ground_vs.glsl'),
+      fragmentShader: require('./shaders/ground_fs.glsl'),
+      lights: true,
+    });
+    largeMaterial.bumpMap = true;
+
+    var largeGround = new THREE.Mesh( new THREE.PlaneGeometry(2000,6000, 10,10 ), largeMaterial);
+    largeGround.rotation.x = -90 * Math.PI / 180;
+    largeGround.position.x = 2000;
+    this.scene.add(largeGround);
+
+    largeGround = new THREE.Mesh( new THREE.PlaneGeometry(2000,6000, 10,10 ), largeMaterial);
+    largeGround.rotation.x = -90 * Math.PI / 180;
+    largeGround.position.x = -2000;
+    this.scene.add(largeGround);
+
+    largeGround = new THREE.Mesh( new THREE.PlaneGeometry(2000,2000, 10,10 ), largeMaterial);
+    largeGround.rotation.x = -90 * Math.PI / 180;
+    largeGround.position.z = -2000;
+    this.scene.add(largeGround);
+
+    largeGround = new THREE.Mesh( new THREE.PlaneGeometry(2000,2000, 10,10 ), largeMaterial);
+    largeGround.rotation.x = -90 * Math.PI / 180;
+    largeGround.position.z = 2000;
+    this.scene.add(largeGround);
+
   },
 
   _createNewBall: function( position ){
@@ -390,7 +428,7 @@ mixin(Builder.prototype, {
     };
 
     TweenMax.to(this.camera.position,3,{ease:Sine.easeInOut,x:-150,y:currentHeight+50,z:-250,onUpdate:updateCamera});
-    
+
     var lookAtTarget = new THREE.Vector3(0,sortedBalls[1].finalY,0);
     var currentLookAt = this._balls[this._currentBallSelected].mesh.position.clone();
 
@@ -427,7 +465,6 @@ mixin(Builder.prototype, {
         }
 
         this.camera.position.lerp(selectedBall.mesh.position.clone().add(this._cameraOffset),0.1);
-
         var ball;
         for (var i = this._balls.length - 1; i >= 0; i--) {
           ball = this._balls[i];
