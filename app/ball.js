@@ -42,7 +42,7 @@ function Ball( scene ) {
     vertex.offset.z = Math.random()*4-2;
   };
 
-  this.snowballMaterial = new THREE.MeshPhongMaterial({ map:ballMap,perPixel:true, color: 0xeeeeee, ambient:0xffffff, bumpMap: ballBumpMap, bumpScale:3, specularMap: reflectionMap, specular:0xffffff,shininess:5 });
+  this.snowballMaterial = new THREE.MeshPhongMaterial({ map:ballMap,perPixel:true, color: 0xeeeeee, ambient:0xeeeeee, bumpMap: ballBumpMap, bumpScale:3, specularMap: reflectionMap, specular:0x999999,shininess:4 });
 
 
   var snowBall = new THREE.Mesh( this.snowBallGeo, this.snowballMaterial);

@@ -240,8 +240,11 @@ mixin(Builder.prototype, {
 
   _initLights: function(){
 
-    this.ambientLight = new THREE.AmbientLight( 0x666666, 0.2 );
+    this.ambientLight = new THREE.AmbientLight( 0x777777, 0.4 );
     this.scene.add(this.ambientLight);
+
+    var hemiLight = new THREE.HemisphereLight( 0xffffff,0xdce9f8 , 0.7 ); 
+    this.scene.add(hemiLight);
 
     //this.pointLight = new THREE.PointLight( 0xffffff, 0.8,1000);
     //this.pointLight.position.set(0,1025,-1000);
@@ -301,6 +304,7 @@ mixin(Builder.prototype, {
 
     var finalSnowUniform = THREE.UniformsUtils.merge( [THREE.ShaderLib["phong"].uniforms, snowUniforms] );
     finalSnowUniform.map.value = diffuseMap;
+
     finalSnowUniform.shininess.value = 10;
     finalSnowUniform.bumpMap.value = this.trailTexture;
     finalSnowUniform.bumpScale.value = 3;
@@ -350,7 +354,7 @@ mixin(Builder.prototype, {
   },
 
   _onUpdateTrailPosition: function( id, x, y, radius ){
-    this.trailCanvas.update(id, x, y, radius);
+    this.trailCanvas.update(id, x, y, radius)
     this.trailTexture.needsUpdate = true;
   },
 
@@ -364,7 +368,7 @@ mixin(Builder.prototype, {
     this._state = STATE_ANIMATE_TO_SNOWMAN;
 
     var sortedBalls = this._balls.concat().sort(function(obj1, obj2) {
-      return (obj1.ballRadius - obj2.ballRadius);
+      return (obj2.ballRadius - obj1.ballRadius);
     });
 
     var ball;
@@ -375,7 +379,7 @@ mixin(Builder.prototype, {
 
       TweenMax.to(ball.mesh.position,1+i,{y:50, ease:Sine.easeInOut});
 
-      currentHeight += ball.ballRadius -10;
+      currentHeight += ball.ballRadius - 2;
       ball.finalY = currentHeight;
       TweenMax.to(ball.mesh.position,1+i,{delay:1*i,x:0, y:ball.finalY+20 ,z:0, ease:Sine.easeInOut, onComplete:function(ball){
         TweenMax.to(ball.mesh.position,1,{y: ball.finalY });
@@ -385,13 +389,13 @@ mixin(Builder.prototype, {
       currentHeight += ball.ballRadius - 10;
     };
 
-    TweenMax.to(this.camera.position,3,{ease:Sine.easeInOut,x:-150,y:currentHeight-50,z:-350,onUpdate:updateCamera});
-
-    var lookAtTarget = sortedBalls[1].mesh.position.clone();
+    TweenMax.to(this.camera.position,3,{ease:Sine.easeInOut,x:-150,y:currentHeight+50,z:-250,onUpdate:updateCamera});
+    
+    var lookAtTarget = new THREE.Vector3(0,sortedBalls[1].finalY,0);
     var currentLookAt = this._balls[this._currentBallSelected].mesh.position.clone();
 
     function updateCamera(){
-      currentLookAt.lerp(lookAtTarget,0.01);
+      currentLookAt.lerp(lookAtTarget,0.1);
       self.camera.lookAt(currentLookAt);
     }
 
