@@ -23,8 +23,8 @@ function Ball( scene ) {
   this.up = new THREE.Vector3(0,1,0);
   this.moveDir = new THREE.Vector3();
   this._prevSnowBallPos = new THREE.Vector3();
-  this.momentumZ = 0;
-  this.momentumX = 0;
+  this.velocity = new THREE.Vector3();
+  this.colliding = false;
   this.ballRadius = 1;
   this.ballOffsetY = 0;
   this._positionDirty = false;
@@ -66,8 +66,8 @@ Emitter(p);
 p.steerWithMouse =  function( mousePoint  ){
 
   var rotateSpeedFactor = 70/100*(100-this.ballRadius);
-  this.momentumX += (mousePoint.x*2.5 - this.momentumX)/rotateSpeedFactor;
-  this.momentumZ += (mousePoint.y*2.5 - this.momentumZ)/rotateSpeedFactor;
+  this.velocity.x += (mousePoint.x*2.5 - this.velocity.x)/rotateSpeedFactor;
+  this.velocity.z += (mousePoint.y*2.5 - this.velocity.z)/rotateSpeedFactor;
 
   this._positionDirty = true;
 
@@ -76,26 +76,60 @@ p.steerWithMouse =  function( mousePoint  ){
 p.steerWithKeyboard =  function( keyboardStatus ){
 
   if( keyboardStatus['left'] ) {
-    this.momentumX -= 0.1;
+    this.velocity.x -= 0.1;
   }
 
   if( keyboardStatus['right'] ) {
-    this.momentumX += 0.1;
+    this.velocity.x += 0.1;
   }
 
   if( keyboardStatus['up'] ) {
-    this.momentumZ -= 0.1;
+    this.velocity.z -= 0.1;
   }
 
   if( keyboardStatus['down'] ) {
-    this.momentumZ += 0.1;
+    this.velocity.z += 0.1;
   }
 
-  this.momentumZ = Math.max(-2,Math.min(2,this.momentumZ));
-  this.momentumX = Math.max(-2,Math.min(2,this.momentumX));
+  this.velocity.set(Math.max(-2,Math.min(2,this.velocity.x)),0,Math.max(-2,Math.min(2,this.velocity.z)));
+
+  //this.velocity.set(this.velocity.x,0,this.velocity.z);
 
   this._positionDirty = true;
 
+}
+
+p.updateCollision = function(balls){
+
+  if( balls.length <= 1 ) {
+    this.colliding = false;
+    return;
+  }
+
+  var isMovable = true;
+  for (var i = balls.length-1; i >= 0; i--) {
+    if( this.id != balls[i].id ) {
+      isMovable = this._canMove(this, balls[i]);
+
+      if (!isMovable) {
+        this.velocity.set(0,0,0);
+        this.colliding = true;
+        return;
+      }
+    }
+  }
+  this.colliding = false;
+}
+
+p._canMove = function(ballA, ballB) {
+  var testPointA = ballA.mesh.position.clone().add( this.velocity );
+  var distance = testPointA.distanceTo(ballB.mesh.position) - ballA.ballRadius - ballB.ballRadius;
+
+  if (distance >= 0) {
+    return true;
+  }
+
+  return false;
 }
 
 p.update = function(){
@@ -104,29 +138,29 @@ p.update = function(){
   var rotateAmountFactor = 0.05*(80-this.ballRadius)/40;
 
   if( !this._positionDirty ) {
-    this.momentumX *= 0.9
-    this.momentumZ *= 0.9
+    this.velocity.multiplyScalar(0.9);
   }
   else {
     this._positionDirty = false;
   }
 
-  this.moveDir.set(-this.momentumX, 0, -this.momentumZ);
+  this.moveDir.set(-this.velocity.x, 0, -this.velocity.z);
 
   var rotationDir = new THREE.Vector3().crossVectors(this.moveDir, this.up);
-  var amount = Math.sqrt( this.momentumX*rotateAmountFactor * this.momentumX*rotateAmountFactor + this.momentumZ*rotateAmountFactor * this.momentumZ*rotateAmountFactor);
+  var amount = Math.sqrt( this.velocity.x*rotateAmountFactor * this.velocity.x*rotateAmountFactor + this.velocity.z*rotateAmountFactor * this.velocity.z*rotateAmountFactor);
 
   this._rotateAroundWorldAxis( snowBall, rotationDir,amount)
 
-  snowBall.position.x += this.momentumX;
-  snowBall.position.z += this.momentumZ;
+  if( !this.colliding ) {
+    snowBall.position.add( this.velocity );
+  }
 
   if( snowBall.position.distanceTo(this._prevSnowBallPos ) > 0.3 ) {
 
     //this._spawnSnowChunk();
 
     if( this.ballRadius < 65 ) {
-      this.ballRadius += 0.01;
+      this.ballRadius += 0.06;
     }
     this.emit("trailPositionUpdate",
       this.id,
@@ -134,7 +168,6 @@ p.update = function(){
       (snowBall.position.z/this.groundSize.height)*1024 + 512,
       (this.ballRadius*0.75)/2000*1024
     );
-
   }
 
   this._prevSnowBallPos.copy(snowBall.position);

@@ -320,6 +320,7 @@ mixin(Builder.prototype, {
   _draw: function(){
     var delta = this._clock.getDelta();
     var time = this._clock.getElapsedTime() * 10;
+    var self = this;
 
      this.ground.material.uniforms.time.value += delta/100;
 
@@ -339,9 +340,12 @@ mixin(Builder.prototype, {
 
       this.camera.position.lerp(selectedBall.mesh.position.clone().add(this._cameraOffset),0.1);
 
-      forEach(this._balls, function( ball ){
+      var ball;
+      for (var i = this._balls.length - 1; i >= 0; i--) {
+        ball = this._balls[i];
+        ball.updateCollision( this._balls);
         ball.update();
-      })
+      }
     }
 
     this.renderer.render( this.scene, this.camera );
