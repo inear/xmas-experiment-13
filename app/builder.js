@@ -423,25 +423,29 @@ mixin(Builder.prototype, {
 
       currentHeight += ball.ballRadius + 3;
       ball.finalY = currentHeight;
-      TweenMax.to(ball.mesh.position,1+i,{delay:1*i,x:0, y:ball.finalY+20 ,z:0, ease:Sine.easeInOut, onComplete:function(ball){
-        TweenMax.to(ball.mesh.position,1,{y: ball.finalY });
-        TweenMax.to(ball.mesh.rotation,1,{y: "-2" });
-      }.bind(this,ball)});
+      TweenMax.to(ball.mesh.position,1,{delay:1*i,x:0, y:ball.finalY+20 ,z:0, ease:Sine.easeInOut, onComplete:ballInCenter, onCompleteParams:[ball]});
 
       currentHeight += ball.ballRadius - 10;
     };
 
-    TweenMax.to(this.camera.position,3,{ease:Sine.easeInOut,x:-150,y:currentHeight+50,z:-250,onUpdate:updateCamera});
+    TweenMax.to(this.camera.position,5,{ease:Sine.easeInOut,x:-150,y:currentHeight+50,z:-150,onUpdate:updateCamera,onComplete:cameraInPlace});
 
     var lookAtTarget = new THREE.Vector3(0,sortedBalls[1].finalY,0);
     var currentLookAt = this._balls[this._currentBallSelected].mesh.position.clone();
 
+    function ballInCenter( ball ) {
+      TweenMax.to(ball.mesh.position,1,{y: ball.finalY });
+      TweenMax.to(ball.mesh.rotation,1,{y: "-2" });
+    }
+
     function updateCamera(){
-      currentLookAt.lerp(lookAtTarget,0.1);
+      currentLookAt.lerp(lookAtTarget,0.01);
       self.camera.lookAt(currentLookAt);
     }
 
-    console.log(sortedBalls);
+    function cameraInPlace(){
+      TweenMax.to(self.camera.position,1,{ease:Sine.easeInOut,x:-45,y:currentHeight+20,z:-45});
+    }
 
   },
 
@@ -450,7 +454,7 @@ mixin(Builder.prototype, {
     var time = this._clock.getElapsedTime() * 10;
     var self = this;
 
-     this.ground.material.uniforms.time.value += delta/100;
+    //this.ground.material.uniforms.time.value += delta/100;
 
     if (isNaN(delta) || delta > 1000 || delta === 0 ) {
       delta = 1000/60;
