@@ -234,7 +234,7 @@ mixin(Builder.prototype, {
     //this.renderer.shadowMapDebug = true;
     //this.renderer.shadowMapCascade = true;
 
-    this.scene.fog = new THREE.Fog( 0xffffff, 1, 5000 );
+    this.scene.fog = new THREE.Fog( 0xffffff, 1000, 6000 );
 
     if (this.sizeRatio > 1) {
       this.renderer.domElement.style.webkitTransform = "scale3d("+this.sizeRatio+", "+this.sizeRatio+", 1)";
@@ -301,6 +301,10 @@ mixin(Builder.prototype, {
     finalSnowUniform.shininess.value = 10;
     finalSnowUniform.bumpMap.value = this.trailTexture;
     finalSnowUniform.bumpScale.value = 3;
+    /*
+    finalSnowUniform.fogNear.value = this.scene.fog.near;
+    finalSnowUniform.fogFar.value = this.scene.fog.far;
+    finalSnowUniform.fogColor.value = new THREE.Color(0xffffff);*/
 
     var params = {
         uniforms:  finalSnowUniform,
@@ -410,14 +414,14 @@ mixin(Builder.prototype, {
     });
 
     var ball;
-    var currentHeight = 0;
+    var currentHeight = -10;
     for (var i = 0; i < 3; i++) {
       ball = sortedBalls[i];
       ball.belongsToSnowman = true;
 
       TweenMax.to(ball.mesh.position,1+i,{y:50, ease:Sine.easeInOut});
 
-      currentHeight += ball.ballRadius - 2;
+      currentHeight += ball.ballRadius + 3;
       ball.finalY = currentHeight;
       TweenMax.to(ball.mesh.position,1+i,{delay:1*i,x:0, y:ball.finalY+20 ,z:0, ease:Sine.easeInOut, onComplete:function(ball){
         TweenMax.to(ball.mesh.position,1,{y: ball.finalY });

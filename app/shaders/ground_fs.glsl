@@ -54,6 +54,10 @@ uniform vec3 ambient;
 uniform sampler2D map;
 uniform sampler2D bumpMap;
 
+uniform vec3 fogColor;
+uniform float fogNear;
+uniform float fogFar;
+
 
 uniform bool useRefract;
 uniform float refractionRatio;
@@ -124,7 +128,7 @@ void main()
             float dirSpecularWeight = max( pow( dirDotNormalHalf, shininess ), 0.0 );
 
             dirSpecular += specular * directionalLightColor[ i ] * dirSpecularWeight * dirDiffuseWeight;
-            
+
 
         }
 
@@ -371,5 +375,9 @@ void main()
         gl_FragColor.xyz = gl_FragColor.xyz * shadowColor;
 
     #endif
+
+    float depth = gl_FragCoord.z / gl_FragCoord.w;
+    float fogFactor = smoothstep( fogNear, fogFar, depth );
+    gl_FragColor = mix( gl_FragColor, vec4( fogColor, gl_FragColor.w ), fogFactor );
 
 }
