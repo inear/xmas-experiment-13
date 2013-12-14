@@ -38,6 +38,7 @@ function Builder() {
   this._onUpdateTrailPosition = this._onUpdateTrailPosition.bind(this);
 
   this.sizeRatio = 1;
+  this.projector = new THREE.Projector();
 
   this._balls = [];
   this._currentBallSelected = 0;
@@ -142,9 +143,21 @@ mixin(Builder.prototype, {
   _onMouseDown: function( evt ){
     this._mouseIsDown = true;
 
-    //if( this._balls.length === 0 ) {
-      this._createNewBall();
-    //}
+    var vector = new THREE.Vector3(this._normalizedMouse2D.x,this._normalizedMouse2D.y*-1,0.5);
+    this.projector.unprojectVector( vector,this.camera);
+
+    var raycaster = new THREE.Raycaster(this.camera.position,vector.sub(this.camera.position).normalize() );
+    var intersects = raycaster.intersectObjects( this.scene.children );
+
+    if ( intersects.length > 0 ) {
+      var intersect = intersects[0];
+
+      if( intersect.object === this.ground ) {
+        this._createNewBall(intersect.point);
+      }
+
+    }
+
   },
 
   _onMouseUp: function( evt ){
@@ -236,8 +249,8 @@ mixin(Builder.prototype, {
 
 
     this.trailTexture = new THREE.Texture(this.trailCanvas.el);
-
-    //this.trailCanvas.update(0,512,512);
+    this.trailTexture.needsUpdate = true
+    this.trailCanvas.update(0,512,512,1);
     //this.trailTexture.needsUpdate = true;
     //this.trailTexture.mapping = THREE.UVMapping;
 
@@ -275,7 +288,8 @@ mixin(Builder.prototype, {
 
     //snowMaterial.shadowMapCascade = true;
 
-    this.ground = new THREE.Mesh( groundGeo, snowMaterial)
+    this.ground = new THREE.Mesh( groundGeo, snowMaterial);
+    this.ground.id = "ground";
     this.ground.receiveShadow = true;
     this.ground.castShadow = false;
     this.ground.rotation.x = - 90 * Math.PI / 180;
@@ -298,16 +312,19 @@ mixin(Builder.prototype, {
     this.scene.add(this.ground);
   },
 
-  _createNewBall: function(){
+  _createNewBall: function( position ){
 
     var newBall = new Ball(this.scene);
     newBall.on("trailPositionUpdate", this._onUpdateTrailPosition)
 
     this._balls.push(newBall);
 
+    if( position ) {
+      newBall.mesh.position.x = position.x
+      newBall.mesh.position.z = position.z
+    }
+
     this._currentBallSelected = this._balls.length-1;
-    this.momentumX = this._normalizedMouse2D.x*5.5;
-    this.momentumZ = this._normalizedMouse2D.y*5.5;
 
   },
 

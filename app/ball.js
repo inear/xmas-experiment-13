@@ -160,7 +160,7 @@ p.update = function(){
     //this._spawnSnowChunk();
 
     if( this.ballRadius < 65 ) {
-      this.ballRadius += 0.06;
+      this.ballRadius += 0.03;
     }
     this.emit("trailPositionUpdate",
       this.id,
@@ -195,6 +195,7 @@ p.update = function(){
     vertex.z += Math.random()*15-7.5;*/
   };
   snowBall.geometry.verticesNeedUpdate = true;
+  snowBall.geometry.computeBoundingSphere()
   //snowBall.geometry.computeFaceNormals();
   //snowBall.geometry.computeVertexNormals();
 
