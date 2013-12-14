@@ -10,6 +10,7 @@ var forEach = require('for-each');
 var settings = require('./settings');
 var SettingsUI = require('./settings-ui');
 var Trail = require('./trail');
+var Ball = require('./ball');
 var detector = require('./utils/detector');
 var ObjectPool = require('./utils/object-pool');
 var SnowChunk = require('./snow-chunk');
@@ -24,8 +25,7 @@ function Builder() {
   this.size = {};
   this._mouse2D = new THREE.Vector2();
   this._normalizedMouse2D = new THREE.Vector2();
-  this._prevSnowBallPos = new THREE.Vector3();
-  this._ballOffsetY = 0;
+
   this._cameraOffset = new THREE.Vector3(0,300,300);
   this._mouseMoved = false;
   this._steerIsActive = false;
@@ -35,7 +35,8 @@ function Builder() {
   this._onMouseMove = this._onMouseMove.bind(this);
   this._onMouseDown = this._onMouseDown.bind(this);
   this._onMouseUp = this._onMouseUp.bind(this);
-  
+  this._onUpdateTrailPosition = this._onUpdateTrailPosition.bind(this);
+
   this.sizeRatio = 1;
 
   this._balls = [];
@@ -60,21 +61,15 @@ mixin(Builder.prototype, {
 
     this._clock = new THREE.Clock();
 
-    this.momentumX = 0;
-    this.momentumZ = 0;
-
-    this.up = new THREE.Vector3(0,1,0);
-    this.moveDir = new THREE.Vector3();
-
     this._init3D();
     this._initLights();
     this._createSceneObjects();
-    
+
     this._onResize();
     this._draw();
 
     this._addEventListeners();
-    
+
   },
 
   _initSnowChunks: function(){
@@ -99,7 +94,7 @@ mixin(Builder.prototype, {
   },
 
   _addEventListeners: function(){
-    
+
     var self = this;
 
     this.mapListener(this._stage, 'mouseup', this._onMouseUp);
@@ -111,7 +106,7 @@ mixin(Builder.prototype, {
     forEach(list,function(dir){
 
       Mousetrap.bind(dir, keyDown, 'keydown');
-      Mousetrap.bind(dir, keyUp, 'keyup');   
+      Mousetrap.bind(dir, keyUp, 'keyup');
 
       function keyDown() {
         self._keyStatus[dir] = true;
@@ -128,7 +123,7 @@ mixin(Builder.prototype, {
 
         //set steering flag
         self._steerIsActive = self._keyStatus['left'] || self._keyStatus['right'] || self._keyStatus['down'] || self._keyStatus['up'];
-        
+
       }
     })
   },
@@ -147,9 +142,9 @@ mixin(Builder.prototype, {
   _onMouseDown: function( evt ){
     this._mouseIsDown = true;
 
-    if( this._balls.length === 0 ) {
+    //if( this._balls.length === 0 ) {
       this._createNewBall();
-    }
+    //}
   },
 
   _onMouseUp: function( evt ){
@@ -197,7 +192,7 @@ mixin(Builder.prototype, {
 
   _initLights: function(){
 
-    this.ambientLight = new THREE.AmbientLight( 0x666666, 0.1 );
+    this.ambientLight = new THREE.AmbientLight( 0x666666, 0.2 );
     this.scene.add(this.ambientLight);
 
     //this.pointLight = new THREE.PointLight( 0xffffff, 0.8,1000);
@@ -238,41 +233,12 @@ mixin(Builder.prototype, {
 
   _createSceneObjects: function(){
 
-    this.snowBallGeo = new THREE.IcosahedronGeometry(settings.ballRadius,3);
-    //geo = new THREE.SphereGeometry(settings.ballRadius,30,30)
-    this.snowBallGeo.isDynamic = true;
-    var vertices = this.snowBallGeo.vertices;
-    var vertex;
-
-    for (var i = vertices.length - 1; i >= 0; i--) {
-      vertex = vertices[i];
-      vertex.offset = new THREE.Vector3();
-      vertex.offset.y = Math.random()*4-2;
-      vertex.offset.x = Math.random()*4-2;
-      vertex.offset.z = Math.random()*4-2;
-    };
-
-    var reflectionMap = THREE.ImageUtils.loadTexture('assets/images/snow-reflection2.jpg');
-    reflectionMap.repeat.x = reflectionMap.repeat.y = 4
-    reflectionMap.wrapT = reflectionMap.wrapS = THREE.RepeatWrapping;
-
-
-    var ballMap = THREE.ImageUtils.loadTexture('assets/images/snow-diffuse-spherical3.jpg');
-    ballMap.magFilter = ballMap.minFilter = THREE.LinearFilter;
-
-    var ballBumpMap = THREE.ImageUtils.loadTexture('assets/images/ball-bump-spherical.jpg');
-    ballBumpMap.repeat.x = ballBumpMap.repeat.y = 1;
-    ballBumpMap.magFilter = ballBumpMap.minFilter = THREE.LinearFilter;
-    ballBumpMap.wrapT = ballBumpMap.wrapS = THREE.RepeatWrapping;
-
-    this.snowballMaterial = new THREE.MeshPhongMaterial({ map:ballMap,perPixel:true, color: 0xffffff, ambient:0xffffff, bumpMap: ballBumpMap, bumpScale:3, specularMap: reflectionMap, specular:0xffffff,shininess:5 });
 
 
     this.trailTexture = new THREE.Texture(this.trailCanvas.el);
 
-    this.trailCanvas.setTrailRadius(0)
-    this.trailCanvas.update(512,512);
-    this.trailTexture.needsUpdate = true;
+    //this.trailCanvas.update(0,512,512);
+    //this.trailTexture.needsUpdate = true;
     //this.trailTexture.mapping = THREE.UVMapping;
 
     /*
@@ -293,7 +259,7 @@ mixin(Builder.prototype, {
     finalSnowUniform.shininess.value = 10;
     finalSnowUniform.bumpMap.value = this.trailTexture;
     finalSnowUniform.bumpScale.value = 3;
-    
+
 
     var params = {
         uniforms:  finalSnowUniform,
@@ -333,160 +299,56 @@ mixin(Builder.prototype, {
   },
 
   _createNewBall: function(){
-    
-    var snowBall = new THREE.Mesh( this.snowBallGeo, this.snowballMaterial);
-    snowBall.castShadow = true;
-    snowBall.receiveShadow = false;
-    snowBall.position.y = 40;
 
-    this.scene.add(snowBall);
+    var newBall = new Ball(this.scene);
+    newBall.on("trailPositionUpdate", this._onUpdateTrailPosition)
 
-    this._balls.push(snowBall);
+    this._balls.push(newBall);
+
     this._currentBallSelected = this._balls.length-1;
-
     this.momentumX = this._normalizedMouse2D.x*5.5;
     this.momentumZ = this._normalizedMouse2D.y*5.5;
 
-    TweenMax.fromTo( settings,3.7,{ballRadius:5},{ballRadius:20});
-    TweenMax.fromTo( this,3.7,{_ballOffsetY:10},{_ballOffsetY:0});
-
   },
 
-  _updateBall: function( index ){
-
-    var snowBall = this._balls[index];
-
-    var rotateAmountFactor = 0.05*(80-settings.ballRadius)/40;
-
-    if( this._mouseIsDown ) {
-      var rotateSpeedFactor = 70/100*(100-settings.ballRadius);
-      this.momentumX += (this._normalizedMouse2D.x*2.5 - this.momentumX)/rotateSpeedFactor;
-      this.momentumZ += (this._normalizedMouse2D.y*2.5 - this.momentumZ)/rotateSpeedFactor;
-    }
-    else if( this._steerIsActive ) {
-
-      if( this._keyStatus['left'] ) {
-        this.momentumX -= 0.1;
-      }
-      
-      if( this._keyStatus['right'] ) {
-        this.momentumX += 0.1;
-      }
-      
-      if( this._keyStatus['up'] ) {
-        this.momentumZ -= 0.1;
-      }
-      
-      if( this._keyStatus['down'] ) {
-        this.momentumZ += 0.1;
-      }
-      
-      this.momentumZ = Math.max(-2,Math.min(2,this.momentumZ));
-      this.momentumX = Math.max(-2,Math.min(2,this.momentumX));
-      
-    }
-    else {
-      this.momentumX *= 0.9
-      this.momentumZ *= 0.9
-    }
-
-    this.moveDir.set(-this.momentumX, 0, -this.momentumZ);
-
-    var rotationDir = new THREE.Vector3().crossVectors(this.moveDir, this.up);
-    var amount = Math.sqrt( this.momentumX*rotateAmountFactor * this.momentumX*rotateAmountFactor + this.momentumZ*rotateAmountFactor * this.momentumZ*rotateAmountFactor);
-
-    this._rotateAroundWorldAxis( snowBall, rotationDir,amount)
-
-    
-    snowBall.position.x += this.momentumX;
-    snowBall.position.z += this.momentumZ;
-
-
-    if( snowBall.position.distanceTo(this._prevSnowBallPos ) > 0.3 ) {
-
-      //this._spawnSnowChunk();
-
-      if( settings.ballRadius < 65 ) {
-        settings.ballRadius += 0.01;
-      }
-      this.trailCanvas.setTrailRadius( (settings.ballRadius*0.75)/2000*1024);
-      this.trailCanvas.update((snowBall.position.x/this.groundSize.width)*1024+512,(snowBall.position.z/this.groundSize.height)*1024 + 512)
+  _onUpdateTrailPosition: function( id, x, y, radius ){
+      this.trailCanvas.update(id, x, y, radius)
       this.trailTexture.needsUpdate = true;
-    }
 
-    this._prevSnowBallPos.copy(snowBall.position);
-
-    //snowBall.scale.set( settings.ballScale,settings.ballScale,settings.ballScale);
-    
-    var vertices = snowBall.geometry.vertices;
-    var vertex, worldVector;
-    for (var i = vertices.length - 1; i >= 0; i--) {
-      vertex = vertices[i];
-
-      worldVector = snowBall.localToWorld( vertex.clone() );
-
-      //if( this.up.negate().dot( snowBall.position.clone().sub(worldVector).normalize()) < 0.2 ) {
-      //if( (worldVector.y < snowBall.position.y - settings.ballRadius + 10) || (vertex.length() < settings.ballRadius-3) ) {
-
-        vertex.hasUpdated = true;
-        //vertex.setLength(settings.ballRadius + Math.random()*2.3);
-        vertex.setLength(settings.ballRadius+vertex.offset.y*settings.ballRadius/60);
-        
-      /*}
-      else if( vertex.hasUpdated && worldVector.y > 5 ) {
-        vertex.hasUpdated = false;
-      }*/
-     /* vertex.y += Math.random()*15-7.5;
-      vertex.x += Math.random()*15-7.5;
-      vertex.z += Math.random()*15-7.5;*/
-    };
-    snowBall.geometry.verticesNeedUpdate = true;
-    //snowBall.geometry.computeFaceNormals();
-    //snowBall.geometry.computeVertexNormals();
-
-    
-    snowBall.position.y = this._ballOffsetY + settings.ballRadius*2 - 20-40*settings.ballRadius/40;
-    
-    //highlight faces
-
-    this.snowballMaterial.bumpScale = 5*settings.ballRadius/40;
-
-    this.camera.position.lerp(snowBall.position.clone().add( this._cameraOffset ),0.1);
   },
 
   _draw: function(){
     var delta = this._clock.getDelta();
     var time = this._clock.getElapsedTime() * 10;
-    
-      this.ground.material.uniforms.time.value += delta/100;
-    
+
+     this.ground.material.uniforms.time.value += delta/100;
+
     if (isNaN(delta) || delta > 1000 || delta === 0 ) {
       delta = 1000/60;
     }
     this.delta = delta;
 
-    //this.camera.rotation.y += 0.1;
+    if( this._balls.length ) {
+      var selectedBall = this._balls[this._currentBallSelected];
+      if( this._mouseIsDown ) {
+        selectedBall.steerWithMouse(this._normalizedMouse2D);
+      }
+      else if( this._steerIsActive) {
+        selectedBall.steerWithKeyboard(this._keyStatus);
+      }
 
-    if( this._balls.length  ) {
-      this._updateBall( this._currentBallSelected );
+      this.camera.position.lerp(selectedBall.mesh.position.clone().add(this._cameraOffset),0.1);
+
+      forEach(this._balls, function( ball ){
+        ball.update();
+      })
     }
 
-    //this.camera.lookAt(this.scene.position)
     this.renderer.render( this.scene, this.camera );
-
 
     raf( this._draw );
   },
 
-  _rotateAroundWorldAxis: function(object, axis, radians) {
-    var rotWorldMatrix = new THREE.Matrix4();
-    var euler = new THREE.Euler();
-    rotWorldMatrix.makeRotationAxis(axis.normalize(), radians);
-    rotWorldMatrix.multiply(object.matrix);
-    object.matrix = rotWorldMatrix;
-
-    object.rotation = euler.setFromRotationMatrix(object.matrix);
-  },
 
   _onResize: function() {
 

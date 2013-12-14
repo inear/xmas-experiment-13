@@ -7,7 +7,9 @@
     "visionmedia/debug": "*",
     "kewah/mixin": "0.1.0",
     "kewah/dom-event-map": "0.1.1",
-    "kewah/for-each": "0.0.1"
+    "kewah/for-each": "*",
+    "component/emitter": "1.1.0",
+    "yields/indexof": "1.0.0"
   },
   "paths": [
     "lib"
@@ -27,6 +29,7 @@
     "app/builder.js",
     "app/snow-chunk.js",
     "app/trail.js",
-    "app/index.js"
+    "app/index.js",
+    "app/ball.js"
   ]
 }
