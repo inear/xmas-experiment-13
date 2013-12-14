@@ -153,9 +153,22 @@ mixin(Builder.prototype, {
       var intersect = intersects[0];
 
       if( intersect.object === this.ground ) {
-        this._createNewBall(intersect.point);
-      }
 
+        if( !this._balls.length ) {
+          this._createNewBall(intersect.point);
+        }
+        else {
+          var canSpawn = true;
+          for (var i = this._balls.length - 1; i >= 0; i--) {
+            if(this._balls[i].mesh.position.distanceTo(intersect.point) < 60) {
+              canSpawn = false
+            }
+          }
+          if( canSpawn ) {
+            this._createNewBall(intersect.point);
+          }
+        }
+      }
     }
 
   },
