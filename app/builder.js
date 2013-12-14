@@ -18,6 +18,10 @@ var SnowChunk = require('./snow-chunk');
 var SHADOW_MAP_WIDTH = 1024*2;
 var SHADOW_MAP_HEIGHT = 1024*2;
 
+var STATE_CREATING_BALLS = "creating balls";
+var STATE_ANIMATE_TO_SNOWMAN = "animate balls";
+var STATE_EDIT_SNOWMAN_HEAD = "edit snowman head";
+
 function Builder() {
 
   this.groundSize = {width:2000,height:2000};
@@ -25,6 +29,7 @@ function Builder() {
   this.size = {};
   this._mouse2D = new THREE.Vector2();
   this._normalizedMouse2D = new THREE.Vector2();
+  this._canCreateBallAt = new THREE.Vector3(-1,-1,0);
 
   this._cameraOffset = new THREE.Vector3(0,300,300);
   this._mouseMoved = false;
@@ -36,6 +41,7 @@ function Builder() {
   this._onMouseDown = this._onMouseDown.bind(this);
   this._onMouseUp = this._onMouseUp.bind(this);
   this._onUpdateTrailPosition = this._onUpdateTrailPosition.bind(this);
+  this._createSnowman = this._createSnowman.bind(this);
 
   this.sizeRatio = 1;
   this.projector = new THREE.Projector();
@@ -59,8 +65,11 @@ mixin(Builder.prototype, {
   init: function() {
 
     this._stage = document.getElementById('stage');
+    this._$createSnowmanBtn = $('#createSnowmanBtn');
 
     this._clock = new THREE.Clock();
+
+    this._state = STATE_CREATING_BALLS;
 
     this._init3D();
     this._initLights();
@@ -98,9 +107,13 @@ mixin(Builder.prototype, {
 
     var self = this;
 
-    this.mapListener(this._stage, 'mouseup', this._onMouseUp);
+    this.mapListener(window, 'mouseup', this._onMouseUp);
     this.mapListener(this._stage, 'mousedown', this._onMouseDown);
     this.mapListener(this._stage, 'mousemove', this._onMouseMove);
+
+    //ui buttons
+
+    this.mapListener(this._$createSnowmanBtn[0], 'click', this._createSnowman);
 
     var list = ['left','right','up','down'];
 
@@ -137,11 +150,11 @@ mixin(Builder.prototype, {
       (this._mouse2D.y/this.size.height-0.5)*2
     );
 
-    this._mouseMoved = true;
-  },
+    if( this._mouseIsDown ) {
+      return;
+    }
 
-  _onMouseDown: function( evt ){
-    this._mouseIsDown = true;
+    this._canCreateBallAt.set(5000,0,5000);
 
     var vector = new THREE.Vector3(this._normalizedMouse2D.x,this._normalizedMouse2D.y*-1,0.5);
     this.projector.unprojectVector( vector,this.camera);
@@ -155,7 +168,7 @@ mixin(Builder.prototype, {
       if( intersect.object === this.ground ) {
 
         if( !this._balls.length ) {
-          this._createNewBall(intersect.point);
+          this._canCreateBallAt.copy(intersect.point);
         }
         else {
           var canSpawn = true;
@@ -165,12 +178,21 @@ mixin(Builder.prototype, {
             }
           }
           if( canSpawn ) {
-            this._createNewBall(intersect.point);
+            this._canCreateBallAt.copy(intersect.point);
           }
         }
       }
     }
 
+    this._mouseMoved = true;
+  },
+
+  _onMouseDown: function( evt ){
+    this._mouseIsDown = true;
+
+    if( this._state === STATE_CREATING_BALLS && this._canCreateBallAt.x !== 5000 ) {
+      this._createNewBall(this._canCreateBallAt);
+    }
   },
 
   _onMouseUp: function( evt ){
@@ -259,8 +281,6 @@ mixin(Builder.prototype, {
 
   _createSceneObjects: function(){
 
-
-
     this.trailTexture = new THREE.Texture(this.trailCanvas.el);
     this.trailTexture.needsUpdate = true
     this.trailCanvas.update(0,512,512,1);
@@ -271,7 +291,6 @@ mixin(Builder.prototype, {
 */
     var diffuseMap = THREE.ImageUtils.loadTexture('assets/images/snow-diffuse4.jpg');
     diffuseMap.wrapT = diffuseMap.wrapS = THREE.RepeatWrapping;
-
 
     var groundGeo = new THREE.PlaneGeometry(this.groundSize.width,this.groundSize.height,150,150);
 
@@ -285,7 +304,6 @@ mixin(Builder.prototype, {
     finalSnowUniform.shininess.value = 10;
     finalSnowUniform.bumpMap.value = this.trailTexture;
     finalSnowUniform.bumpScale.value = 3;
-
 
     var params = {
         uniforms:  finalSnowUniform,
@@ -308,20 +326,6 @@ mixin(Builder.prototype, {
     this.ground.rotation.x = - 90 * Math.PI / 180;
     this.ground.position.y = 0;
 
-    var vertices = groundGeo.vertices;
-    var vertex;
-    /*for (var i = vertices.length - 1; i >= 0; i--) {
-      vertex = vertices[i];
-      vertex.offset = new THREE.Vector3();
-      vertex.offset.y += Math.random()*15-7.5;
-      vertex.offset.x += Math.random()*15-7.5;
-      vertex.offset.z += Math.random()*15-7.5;
-    };
-*/
-   // groundGeo.computeFaceNormals();
-   // groundGeo.computeVertexNormals();
-
-
     this.scene.add(this.ground);
   },
 
@@ -339,11 +343,59 @@ mixin(Builder.prototype, {
 
     this._currentBallSelected = this._balls.length-1;
 
+    if( this._balls.length > 2) {
+      this._$createSnowmanBtn.removeClass("inactive");
+    }
+
   },
 
   _onUpdateTrailPosition: function( id, x, y, radius ){
-      this.trailCanvas.update(id, x, y, radius)
-      this.trailTexture.needsUpdate = true;
+    this.trailCanvas.update(id, x, y, radius);
+    this.trailTexture.needsUpdate = true;
+  },
+
+  _createSnowman: function(){
+
+    var self = this;
+    var snowman = new THREE.Object3D();
+
+    this._$createSnowmanBtn.addClass("inactive");
+
+    this._state = STATE_ANIMATE_TO_SNOWMAN;
+
+    var sortedBalls = this._balls.concat().sort(function(obj1, obj2) {
+      return (obj1.ballRadius - obj2.ballRadius);
+    });
+
+    var ball;
+    var currentHeight = 0;
+    for (var i = 0; i < 3; i++) {
+      ball = sortedBalls[i];
+      ball.belongsToSnowman = true;
+
+      TweenMax.to(ball.mesh.position,1+i,{y:50, ease:Sine.easeInOut});
+
+      currentHeight += ball.ballRadius -10;
+      ball.finalY = currentHeight;
+      TweenMax.to(ball.mesh.position,1+i,{delay:1*i,x:0, y:ball.finalY+20 ,z:0, ease:Sine.easeInOut, onComplete:function(ball){
+        TweenMax.to(ball.mesh.position,1,{y: ball.finalY });
+        TweenMax.to(ball.mesh.rotation,1,{y: "-2" });
+      }.bind(this,ball)});
+
+      currentHeight += ball.ballRadius - 10;
+    };
+
+    TweenMax.to(this.camera.position,3,{ease:Sine.easeInOut,x:-150,y:currentHeight-50,z:-350,onUpdate:updateCamera});
+
+    var lookAtTarget = sortedBalls[1].mesh.position.clone();
+    var currentLookAt = this._balls[this._currentBallSelected].mesh.position.clone();
+
+    function updateCamera(){
+      currentLookAt.lerp(lookAtTarget,0.01);
+      self.camera.lookAt(currentLookAt);
+    }
+
+    console.log(sortedBalls);
 
   },
 
@@ -361,20 +413,23 @@ mixin(Builder.prototype, {
 
     if( this._balls.length ) {
       var selectedBall = this._balls[this._currentBallSelected];
-      if( this._mouseIsDown ) {
-        selectedBall.steerWithMouse(this._normalizedMouse2D);
-      }
-      else if( this._steerIsActive) {
-        selectedBall.steerWithKeyboard(this._keyStatus);
-      }
 
-      this.camera.position.lerp(selectedBall.mesh.position.clone().add(this._cameraOffset),0.1);
+      if( this._state === STATE_CREATING_BALLS ) {
+         if( this._mouseIsDown ) {
+          selectedBall.steerWithMouse(this._normalizedMouse2D);
+        }
+        else if( this._steerIsActive) {
+          selectedBall.steerWithKeyboard(this._keyStatus);
+        }
 
-      var ball;
-      for (var i = this._balls.length - 1; i >= 0; i--) {
-        ball = this._balls[i];
-        ball.updateCollision( this._balls);
-        ball.update();
+        this.camera.position.lerp(selectedBall.mesh.position.clone().add(this._cameraOffset),0.1);
+
+        var ball;
+        for (var i = this._balls.length - 1; i >= 0; i--) {
+          ball = this._balls[i];
+          ball.updateCollision( this._balls);
+          ball.update();
+        }
       }
     }
 

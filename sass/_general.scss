@@ -53,3 +53,28 @@ body {
   @include transform( scale(0.5));
 }
 
+.build-snowman-btn {
+  display: block;
+  position:absolute;
+  left:50%;
+  margin-left:-140px;
+  width:280px;
+  text-align: center;
+  font-size:16px;
+  color:red;
+  border: 3px solid red;
+  background:#ffffff;
+  padding:20px;
+  bottom:50px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor:pointer;
+
+  &:hover {
+    background:#eeeeee;
+  }
+}
+
+.inactive {
+  display:none;
+}

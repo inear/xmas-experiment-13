@@ -112,7 +112,7 @@ p.updateCollision = function(balls){
       isMovable = this._canMove(this, balls[i]);
 
       if (!isMovable) {
-        this.velocity.set(0,0,0);
+        this.velocity.multiplyScalar(0.7);
         this.colliding = true;
         return;
       }
@@ -159,9 +159,10 @@ p.update = function(){
 
     //this._spawnSnowChunk();
 
-    if( this.ballRadius < 65 ) {
+    if( this.ballRadius < 65 && this.ballOffsetY === 0) {
       this.ballRadius += 0.03;
     }
+
     this.emit("trailPositionUpdate",
       this.id,
       (snowBall.position.x/this.groundSize.width)*1024+512,
