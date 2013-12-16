@@ -505,7 +505,7 @@ mixin(Builder.prototype, {
 
     this._decorationEditor.activeBall( this._snowmanBalls[2] );
 
-    this._decorationEditor.addStone();
+    this._decorationEditor.addCarrot();
 
   },
 

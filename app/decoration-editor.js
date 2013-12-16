@@ -12,20 +12,23 @@ function DecorationEditor( scene, camera ) {
   this._currentBall = null;
   this._projector = new THREE.Projector();
 
+  this._carrot = new THREE.Mesh( new THREE.CylinderGeometry(3,0.2,20,7,4),new THREE.MeshPhongMaterial({color:0xc45840, ambient:0x333333}) );
+  this._carrot.geometry.applyMatrix( new THREE.Matrix4().makeRotationX( - Math.PI / 2 ));
+  this._carrot.geometry.applyMatrix( new THREE.Matrix4().makeRotationZ( - Math.PI));
+
+  var vertices = this._carrot.geometry.vertices;
+    var vertex;
+    for (var i = vertices.length - 1; i >= 0; i--) {
+      vertex = vertices[i];
+      //vertex.y += Math.random()*0.3-0.15;
+      vertex.x += (Math.random()*0.3-0.15)*(20-vertex.z)/20;
+      //vertex.z += Math.random()*0.3-0.15;
+    }
+
   this._stonePool = new StonePool();
   this._stonePool.createObject = function(){
 
     var stoneGeo = new THREE.OctahedronGeometry(5,1);
-
-    var vertices = stoneGeo.vertices;
-    var vertex;
-
-    for (var i = vertices.length - 1; i >= 0; i--) {
-      vertex = vertices[i];
-      vertex.y += Math.random()*1-0.5;
-      vertex.x += Math.random()*1-0.5;
-      vertex.z += Math.random()*1-0.5;
-    }
 
     var mesh = new THREE.Mesh( stoneGeo, new THREE.MeshLambertMaterial({shading:THREE.SmoothShading, color:0x333333, ambient:0x333333}) );
     mesh.castShadows = true;
@@ -43,6 +46,11 @@ Emitter(p);
 
 p.getCurrentBall = function(){
   return this._currentBall;
+}
+
+p.addCarrot = function( ball ){
+  this._currentObject = this._carrot;
+  this._target.add(this._currentObject);
 }
 
 p.activeBall = function( ball ){
@@ -70,7 +78,7 @@ p.activeBall = function( ball ){
 p.set3DCursor = function( position , normal ) {
   if( this._currentObject ){
     this._currentObject.position = this._target.worldToLocal(position.clone());
-
+    this._currentObject.lookAt( this._currentObject.position.clone().multiplyScalar(10) );
     //this._currentObject.position.copy(position.sub( this._target.position));//.multiplyScalar(1.2);
   }
 }
