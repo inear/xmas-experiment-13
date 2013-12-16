@@ -15,20 +15,25 @@ function DecorationEditor( scene, camera ) {
   this._stonePool = new StonePool();
   this._stonePool.createObject = function(){
 
-    var stoneGeo = new THREE.OctahedronGeometry(2,1);
-    /*
+    var stoneGeo = new THREE.OctahedronGeometry(5,1);
+
     var vertices = stoneGeo.vertices;
     var vertex;
 
     for (var i = vertices.length - 1; i >= 0; i--) {
       vertex = vertices[i];
-      vertex.y += Math.random()*2-1;
-      vertex.x += Math.random()*2-1;
-      //vertex.z += Math.random()*2-1;
+      vertex.y += Math.random()*1-0.5;
+      vertex.x += Math.random()*1-0.5;
+      vertex.z += Math.random()*1-0.5;
     }
-*/
+
     var mesh = new THREE.Mesh( stoneGeo, new THREE.MeshLambertMaterial({shading:THREE.SmoothShading, color:0x333333, ambient:0x333333}) );
     mesh.castShadows = true;
+    mesh.scale.set(
+      Math.random()*0.2+0.2,
+      Math.random()*0.2+0.2,
+      Math.random()*0.2+0.2
+    )
     return mesh;
   }
 }

@@ -211,7 +211,7 @@ mixin(Builder.prototype, {
     this.camera.position.copy( this._cameraOffset );
     this.camera.lookAt( this.scene.position );
     this.camera.lookAtTarget = new THREE.Vector3();
-    this.scene.add(this.camera);
+    //this.scene.add(this.camera);
     //this.scene.overrideMaterial = new THREE.MeshBasicMaterial({wireframe:true,color:0x333333});
 
     if( detector.isTouchDevice && detector.isMobile ) {
@@ -437,12 +437,12 @@ mixin(Builder.prototype, {
     this._snowmanBalls = sortedBalls;
     var animationScale = 1;
     var ball;
-    var currentHeight = -10;
+    var currentHeight = -20;
     for (var i = 0; i < 3; i++) {
       ball = sortedBalls[i];
       ball.belongsToSnowman = true;
 
-      currentHeight += ball.ballRadius + 3;
+      currentHeight += ball.ballRadius + 3 + 3*i;
       ball.finalY = currentHeight;
       TweenMax.to(ball.mesh.position,1*animationScale,{delay:1*i,y:1250, ease:Sine.easeInOut, onComplete:ballInCenter, onCompleteParams:[ball]});
 
@@ -455,6 +455,7 @@ mixin(Builder.prototype, {
       ball.mesh.position.z = 0;
     }
 
+    var hasMadeMArkInSnow = false;
     function ballInCenter( ball ) {
       ball.mesh.position.x = 0;
       ball.mesh.position.z = 0;
@@ -462,6 +463,21 @@ mixin(Builder.prototype, {
       //TweenMax.to(ball.mesh.rotation,1*animationScale,{delay:0.4,y: "-0.5" });
     }
 
+    setTimeout(function(){
+      self.trailCanvas.makeRoomForSnowman( self._snowmanBalls[0].ballRadius/40 );
+      self.trailTexture.needsUpdate = true;
+
+      var ring = new THREE.Mesh(new THREE.TorusGeometry(30,10,8,14), new THREE.MeshPhongMaterial({wireframe:false,color:0xffffff,transparent:true,opacity:0.3,side:THREE.DoubleSide}));
+      self.scene.add(ring);
+      ring.rotation.x = Math.PI*0.5;
+      ring.position.y = 0;
+
+      TweenMax.to(ring.scale,2,{x:3,y:3,z:3})
+      TweenMax.to(ring.material,2.8,{opacity:0});
+      TweenMax.to(ring.position,2,{delay:0.8,y:0});
+
+
+    },(1+0.4)*animationScale*1000)
 
     //animate camera
     TweenMax.to(this.camera.position,2*animationScale,{ease:Sine.easeInOut,x:0,y:currentHeight+50,z:240,onUpdate:updateCamera,onComplete:cameraInPlace});
@@ -531,7 +547,6 @@ mixin(Builder.prototype, {
         else if( this._steerIsActive) {
           selectedBall.steerWithKeyboard(this._keyStatus);
         }
-        console.log(selectedBall.velocity.clone().lengthSq())
 
         this._sounds.setRollVolume(selectedBall.velocity.clone().lengthSq());
 

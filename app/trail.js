@@ -55,6 +55,19 @@ p.update = function(id,x,y,radius) {
   this.prevPoint.copy(this.currentPoint);
 }
 
+p.makeRoomForSnowman = function( power ){
+
+  var radgrad = this.ctx.createRadialGradient(512,512,10+40*power,512,512,20 + 40*power);
+  var pressure = 170;// - Math.floor(55 + 200*this.radius/60);
+  var lastColor = 255;// - Math.floor(255*this.radius/40);
+  radgrad.addColorStop(0, 'rgba('+pressure+','+pressure+','+pressure+',0.3)');
+  radgrad.addColorStop(0.8, 'rgba('+pressure+','+pressure+','+pressure+',0.6)');
+  radgrad.addColorStop(1, 'rgba('+lastColor+','+lastColor+','+lastColor+',0)');
+
+  this.ctx.fillStyle = radgrad;
+  this.ctx.fillRect(512-60 - 40*power, 512-60-40*power , 120+ 80*power, 120 + 80*power);
+}
+
 
 function angleBetween(point1, point2) {
   return Math.atan2( point2.x - point1.x, point2.y - point1.y );
