@@ -83,6 +83,20 @@ mixin(Builder.prototype, {
 
     this._addEventListeners();
 
+    var ball = this._createNewBall( new THREE.Vector3(100,0,100));
+    ball.ballRadius = 50;
+    ball.update();
+    
+    ball = this._createNewBall( new THREE.Vector3(-100,0,-100));
+    ball.ballRadius = 30;
+    ball.update();
+
+    ball = this._createNewBall( new THREE.Vector3(0,0,0));
+    ball.ballRadius = 20;
+    ball.update();
+
+    this._createSnowman();
+
   },
 
   _initSnowChunks: function(){
@@ -407,6 +421,7 @@ mixin(Builder.prototype, {
       this._$createSnowmanBtn.removeClass("inactive");
     }
 
+    return newBall;
   },
 
   _onUpdateTrailPosition: function( id, x, y, radius ){
