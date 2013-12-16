@@ -444,15 +444,11 @@ mixin(Builder.prototype, {
 
       currentHeight += ball.ballRadius + 3;
       ball.finalY = currentHeight;
-      TweenMax.to(ball.mesh.position,1*animationScale,{delay:1*i,y:250, ease:Sine.easeInOut, onComplete:ballInCenter, onCompleteParams:[ball]});
+      TweenMax.to(ball.mesh.position,1*animationScale,{delay:1*i,y:1250, ease:Sine.easeInOut, onComplete:ballInCenter, onCompleteParams:[ball]});
 
       currentHeight += ball.ballRadius - 15;
     };
 
-    TweenMax.to(this.camera.position,2*animationScale,{ease:Sine.easeInOut,x:0,y:currentHeight+50,z:140,onUpdate:updateCamera,onComplete:cameraInPlace});
-
-    var lookAtTarget = new THREE.Vector3(0,sortedBalls[1].finalY,0);
-    var currentLookAt = this._balls[1].mesh.position.clone();
 
     function dropBalls( ball ) {
       ball.mesh.position.x = 0;
@@ -462,13 +458,22 @@ mixin(Builder.prototype, {
     function ballInCenter( ball ) {
       ball.mesh.position.x = 0;
       ball.mesh.position.z = 0;
-      TweenMax.to(ball.mesh.position,0.7*animationScale,{ y: ball.finalY, ease:Sine.easeOut,  });
-      TweenMax.to(ball.mesh.rotation,1*animationScale,{delay:0.4,y: "-0.5" });
+      TweenMax.to(ball.mesh.position,0.7*animationScale,{ y: ball.finalY, ease:Back.easeOut, easeParams:[0.3]  });
+      //TweenMax.to(ball.mesh.rotation,1*animationScale,{delay:0.4,y: "-0.5" });
     }
+
+
+    //animate camera
+    TweenMax.to(this.camera.position,2*animationScale,{ease:Sine.easeInOut,x:0,y:currentHeight+50,z:240,onUpdate:updateCamera,onComplete:cameraInPlace});
+    var lookAtTarget = new THREE.Vector3(0,sortedBalls[1].finalY,0);
+    var currentLookAt = this._balls[this._currentBallSelected].mesh.position.clone();
+
+    TweenMax.to(currentLookAt,2*animationScale,{ease:Sine.easeInOut,x:lookAtTarget.x,y:lookAtTarget.y,z:lookAtTarget.z});
+
 
     function updateCamera(){
       //currentLookAt.lerp(lookAtTarget,0.1+ (1-animationScale));
-      self.camera.lookAt(lookAtTarget );
+      self.camera.lookAt(currentLookAt );
     }
 
     function cameraInPlace(){
@@ -509,9 +514,11 @@ mixin(Builder.prototype, {
     if( this._state === STATE_EDIT_SNOWMAN_HEAD && this._lookAtPosition ) {
       var currentEditBall = this._decorationEditor.getCurrentBall();
 
-      this.camera.position.y += ((this._lookAtPosition.y + 40 + currentEditBall.ballRadius*2)- this.camera.position.y)*0.1;
+      this.camera.position.y += ((this._lookAtPosition.y + 10 + currentEditBall.ballRadius*2)- this.camera.position.y)*0.1;
       this.camera.position.z += ((currentEditBall.ballRadius*3 + 60)- this.camera.position.z )*0.1;
       this.camera.lookAtTarget.lerp(this._lookAtPosition,0.1);
+      this.camera.lookAt(this.camera.lookAtTarget);
+
     }
 
     if( this._balls.length ) {

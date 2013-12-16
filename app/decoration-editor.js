@@ -28,6 +28,7 @@ function DecorationEditor( scene, camera ) {
     }
 */
     var mesh = new THREE.Mesh( stoneGeo, new THREE.MeshLambertMaterial({shading:THREE.SmoothShading, color:0x333333, ambient:0x333333}) );
+    mesh.castShadows = true;
     return mesh;
   }
 }
@@ -40,7 +41,7 @@ p.getCurrentBall = function(){
 }
 
 p.activeBall = function( ball ){
-  
+
   this._currentBall = ball;
   this._target = ball.mesh;
 
