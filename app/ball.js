@@ -16,8 +16,8 @@ ballBumpMap.wrapT = ballBumpMap.wrapS = THREE.RepeatWrapping;
 
 var STATIC_ID = -1;
 
-function Ball( scene ) {
-  this.id = STATIC_ID++
+function Ball( scene) {
+  this.id = "ball_" + STATIC_ID++
   this.groundSize = {width:2000,height:2000};
   this.scene = scene;
   this.up = new THREE.Vector3(0,1,0);
@@ -52,10 +52,11 @@ function Ball( scene ) {
 
   this.scene.add(snowBall);
 
-  TweenMax.fromTo( this,2.7,{ballRadius:5},{ballRadius:15});
   TweenMax.fromTo( this,2.7,{ballOffsetY:10},{ballOffsetY:0});
 
   this.mesh = snowBall;
+  this.mesh.id = this.id;
+  this.mesh.parentObject = this;
 
   return this;
 }
@@ -108,7 +109,7 @@ p.updateCollision = function(balls){
 
   var isMovable = true;
   for (var i = balls.length-1; i >= 0; i--) {
-    if( this.id != balls[i].id ) {
+    if( this.id !== balls[i].id ) {
       isMovable = this._canMove(this, balls[i]);
 
       if (!isMovable) {
@@ -185,7 +186,7 @@ p.update = function(){
 
       vertex.hasUpdated = true;
       //vertex.setLength(this.ballRadius + Math.random()*2.3);
-      vertex.setLength(this.ballRadius+vertex.offset.y*this.ballRadius/60);
+      vertex.setLength(this.ballRadius-vertex.offset.y*this.ballRadius/60);
 
     /*}
     else if( vertex.hasUpdated && worldVector.y > 5 ) {

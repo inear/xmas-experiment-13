@@ -36,7 +36,7 @@ void main() {
         float df = uDisplacementScale * (1.0-dv.x);
         vec4 displacedPosition = mvPosition;
         displacedPosition.y -= df;
-        clamp(displacedPosition.y,10.0,-20.0); 
+        clamp(displacedPosition.y,10.0,-30.0); 
 
         vWorldPosition = displacedPosition.xyz;
 

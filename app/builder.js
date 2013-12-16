@@ -14,6 +14,7 @@ var Ball = require('./ball');
 var detector = require('./utils/detector');
 var ObjectPool = require('./utils/object-pool');
 var SnowChunk = require('./snow-chunk');
+var DecorationEditor = require('./decoration-editor');
 
 var SHADOW_MAP_WIDTH = 1024*2;
 var SHADOW_MAP_HEIGHT = 1024*2;
@@ -44,12 +45,17 @@ function Builder() {
   this._onMouseUp = this._onMouseUp.bind(this);
   this._onUpdateTrailPosition = this._onUpdateTrailPosition.bind(this);
   this._createSnowman = this._createSnowman.bind(this);
+  this._initEditMode = this._initEditMode.bind(this);
+  this._updateMousePicker = this._updateMousePicker.bind(this);
 
   this.sizeRatio = 1;
   this.projector = new THREE.Projector();
 
   this._balls = [];
+  this._ballMap = {};
   this._currentBallSelected = 0;
+  this._snowmanBalls = [];
+  this._lookAtPosition = null;
 
   this.trailCanvas = new Trail();
 
@@ -82,16 +88,16 @@ mixin(Builder.prototype, {
     this._draw();
 
     this._addEventListeners();
-
-    var ball = this._createNewBall( new THREE.Vector3(100,0,100));
+return;
+    var ball = this._createNewBall( new THREE.Vector3(100,0,100), false);
     ball.ballRadius = 50;
     ball.update();
     
-    ball = this._createNewBall( new THREE.Vector3(-100,0,-100));
+    ball = this._createNewBall( new THREE.Vector3(-100,0,-100), false);
     ball.ballRadius = 30;
     ball.update();
 
-    ball = this._createNewBall( new THREE.Vector3(0,0,0));
+    ball = this._createNewBall( new THREE.Vector3(0,0,0), false);
     ball.ballRadius = 20;
     ball.update();
 
@@ -103,12 +109,12 @@ mixin(Builder.prototype, {
 
     this._snowChunks = [];
 
-    ObjectPool.prototype.createObject = function(){
+    this._snowChunksPool = new ObjectPool();
+
+    this._snowChunksPool.createObject = function(){
       var chunk = new SnowChunk();
       return chunk;
     }
-
-    this._snowChunksPool = new ObjectPool();
   },
 
   _spawnSnowChunk: function(){
@@ -172,36 +178,6 @@ mixin(Builder.prototype, {
       return;
     }
 
-    this._canCreateBallAt.set(5000,0,5000);
-
-    var vector = new THREE.Vector3(this._normalizedMouse2D.x,this._normalizedMouse2D.y*-1,0.5);
-    this.projector.unprojectVector( vector,this.camera);
-
-    var raycaster = new THREE.Raycaster(this.camera.position,vector.sub(this.camera.position).normalize() );
-    var intersects = raycaster.intersectObjects( this.scene.children );
-
-    if ( intersects.length > 0 ) {
-      var intersect = intersects[0];
-
-      if( intersect.object === this.ground ) {
-
-        if( !this._balls.length ) {
-          this._canCreateBallAt.copy(intersect.point);
-        }
-        else {
-          var canSpawn = true;
-          for (var i = this._balls.length - 1; i >= 0; i--) {
-            if(this._balls[i].mesh.position.distanceTo(intersect.point) < 60) {
-              canSpawn = false
-            }
-          }
-          if( canSpawn ) {
-            this._canCreateBallAt.copy(intersect.point);
-          }
-        }
-      }
-    }
-
     this._mouseMoved = true;
   },
 
@@ -224,6 +200,7 @@ mixin(Builder.prototype, {
 
     this.camera.position.copy( this._cameraOffset );
     this.camera.lookAt( this.scene.position );
+    this.camera.lookAtTarget = new THREE.Vector3();
     this.scene.add(this.camera);
     //this.scene.overrideMaterial = new THREE.MeshBasicMaterial({wireframe:true,color:0x333333});
 
@@ -403,12 +380,13 @@ mixin(Builder.prototype, {
 
   },
 
-  _createNewBall: function( position ){
+  _createNewBall: function( position, skipAnimate ){
 
     var newBall = new Ball(this.scene);
     newBall.on("trailPositionUpdate", this._onUpdateTrailPosition)
 
     this._balls.push(newBall);
+    this._ballMap[newBall.mesh] = newBall;
 
     if( position ) {
       newBall.mesh.position.x = position.x
@@ -419,6 +397,10 @@ mixin(Builder.prototype, {
 
     if( this._balls.length > 2) {
       this._$createSnowmanBtn.removeClass("inactive");
+    }
+
+    if( !skipAnimate ) {
+      TweenMax.fromTo( newBall,2.7,{ballRadius:5},{ballRadius:15});
     }
 
     return newBall;
@@ -440,41 +422,59 @@ mixin(Builder.prototype, {
 
     var sortedBalls = this._balls.concat().sort(function(obj1, obj2) {
       return (obj2.ballRadius - obj1.ballRadius);
-    });
+    }).splice(0,3);
 
+    this._snowmanBalls = sortedBalls;
+    var animationScale = 1;
     var ball;
     var currentHeight = -10;
     for (var i = 0; i < 3; i++) {
       ball = sortedBalls[i];
       ball.belongsToSnowman = true;
 
-      TweenMax.to(ball.mesh.position,1+i,{y:50, ease:Sine.easeInOut});
-
       currentHeight += ball.ballRadius + 3;
       ball.finalY = currentHeight;
-      TweenMax.to(ball.mesh.position,1,{delay:1*i,x:0, y:ball.finalY+20 ,z:0, ease:Sine.easeInOut, onComplete:ballInCenter, onCompleteParams:[ball]});
+      TweenMax.to(ball.mesh.position,1*animationScale,{delay:1*i,y:250, ease:Sine.easeInOut, onComplete:ballInCenter, onCompleteParams:[ball]});
 
-      currentHeight += ball.ballRadius - 10;
+      currentHeight += ball.ballRadius - 15;
     };
 
-    TweenMax.to(this.camera.position,5,{ease:Sine.easeInOut,x:-150,y:currentHeight+50,z:-150,onUpdate:updateCamera,onComplete:cameraInPlace});
+    TweenMax.to(this.camera.position,2*animationScale,{ease:Sine.easeInOut,x:0,y:currentHeight+50,z:140,onUpdate:updateCamera,onComplete:cameraInPlace});
 
     var lookAtTarget = new THREE.Vector3(0,sortedBalls[1].finalY,0);
     var currentLookAt = this._balls[this._currentBallSelected].mesh.position.clone();
 
+    function dropBalls( ball ) {
+      ball.mesh.position.x = 0;
+      ball.mesh.position.z = 0;
+    }
+
     function ballInCenter( ball ) {
-      TweenMax.to(ball.mesh.position,1,{y: ball.finalY });
-      TweenMax.to(ball.mesh.rotation,1,{y: "-2" });
+      ball.mesh.position.x = 0;
+      ball.mesh.position.z = 0;
+      TweenMax.to(ball.mesh.position,0.5*animationScale,{ y: ball.finalY, ease:Sine.easeOut,  });
+      TweenMax.to(ball.mesh.rotation,1*animationScale,{y: "-2" });
     }
 
     function updateCamera(){
-      currentLookAt.lerp(lookAtTarget,0.01);
+      currentLookAt.lerp(lookAtTarget,0.1+ (1-animationScale));
       self.camera.lookAt(currentLookAt);
     }
 
     function cameraInPlace(){
-      TweenMax.to(self.camera.position,1,{ease:Sine.easeInOut,x:-45,y:currentHeight+20,z:-45});
+      TweenMax.to(self.camera.position,1*animationScale,{ease:Sine.easeInOut,x:0,y:currentHeight+20,z:95, onComplete: self._initEditMode });
     }
+
+  },
+
+  _initEditMode: function(){
+    this._decorationEditor = new DecorationEditor(this.scene, this.camera);
+
+    this._state = STATE_EDIT_SNOWMAN_HEAD;
+
+    this._decorationEditor.activeBall( this._snowmanBalls[2] );
+
+    this._decorationEditor.addStone();
 
   },
 
@@ -490,11 +490,25 @@ mixin(Builder.prototype, {
     }
     this.delta = delta;
 
+    if( this._mouseMoved ) {
+      this._canCreateBallAt.set(5000,0,5000);
+      this._mouseMoved = false;
+      this._updateMousePicker();
+    }
+
+    if( this._state === STATE_EDIT_SNOWMAN_HEAD && this._lookAtPosition ) {
+        var currentEditBall = this._decorationEditor.getCurrentBall();
+
+        this.camera.position.y += ((this._lookAtPosition.y + 10 + currentEditBall.ballRadius*2)- this.camera.position.y)*0.1;
+        this.camera.position.z += ((currentEditBall.ballRadius*3 + 10)- this.camera.position.z )*0.1;
+        this.camera.lookAtTarget.lerp(this._lookAtPosition,0.1);
+      }
+
     if( this._balls.length ) {
       var selectedBall = this._balls[this._currentBallSelected];
 
       if( this._state === STATE_CREATING_BALLS ) {
-         if( this._mouseIsDown ) {
+        if( this._mouseIsDown ) {
           selectedBall.steerWithMouse(this._normalizedMouse2D);
         }
         else if( this._steerIsActive) {
@@ -516,6 +530,42 @@ mixin(Builder.prototype, {
     raf( this._draw );
   },
 
+  _updateMousePicker: function(){
+    var vector = new THREE.Vector3(this._normalizedMouse2D.x,this._normalizedMouse2D.y*-1,0.5);
+    this.projector.unprojectVector( vector,this.camera);
+
+    var raycaster = new THREE.Raycaster(this.camera.position,vector.sub(this.camera.position).normalize() );
+    var intersects = raycaster.intersectObjects( this.scene.children );
+
+    if ( intersects.length > 0 ) {
+      var intersect = intersects[0];
+
+      if( intersect.object === this.ground ) {
+
+        if( !this._balls.length ) {
+          this._canCreateBallAt.copy(intersect.point);
+        }
+        else {
+          var canSpawn = true;
+          for (var i = this._balls.length - 1; i >= 0; i--) {
+            if(this._balls[i].mesh.position.distanceTo(intersect.point) < 60) {
+              canSpawn = false
+            }
+          }
+          if( canSpawn ) {
+            this._canCreateBallAt.copy(intersect.point);
+          }
+        }
+      }
+      else if( intersect.object.id.length > 0 && intersect.object.id.indexOf("ball") !== -1 && this._state === STATE_EDIT_SNOWMAN_HEAD ) {
+        if( this._decorationEditor ) {
+          this._decorationEditor.activeBall( intersect.object.parentObject);
+          this._decorationEditor.set3DCursor(intersect.point, intersect.face.normal);
+          this._lookAtPosition = intersect.object.position.clone();
+        }
+      }
+    }
+  },
 
   _onResize: function() {
 

@@ -185,9 +185,9 @@ module.exports = function(grunt) {
 
   grunt.registerTask('prod', [
       'env:prod',
-      'clean:prod',
+      //'clean:prod',
       'compass:prod',
-      'shell:installcomponents',
+      //'shell:installcomponents',
       'component_build:prod',
       'copy:prod',
       'preprocess',
@@ -199,5 +199,11 @@ module.exports = function(grunt) {
 
 
   grunt.registerTask('server', ['connect:dev']);
-  grunt.registerTask('dev', ['env:dev','compass:dev', 'shell:installcomponents','component_build:dev', 'server', 'watch']);
+  grunt.registerTask('dev', [
+    'env:dev',
+    'compass:dev', 
+    //'shell:installcomponents',
+    'component_build:dev', 
+    'server', 
+    'watch']);
 };
