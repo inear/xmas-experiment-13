@@ -7,6 +7,7 @@ var StonePool = require('./utils/object-pool');
 function DecorationEditor( scene, camera ) {
   this.scene = scene;
   this.camera = camera;
+  this._attachedStones = [];
   this._target = null;
   this._currentBall = null;
   this._projector = new THREE.Projector();
@@ -45,10 +46,18 @@ p.activeBall = function( ball ){
   this._target = ball.mesh;
 
   if( this._currentObject ) {
+
     if( this._currentObject.parent !== this._target ) {
       this._currentObject.parent.remove(this._currentObject);
     }
-    this._target.add(this._currentObject);
+
+    if( ball ) {
+      this._target.add(this._currentObject);
+    }
+    else {
+      this._currentBall = null;
+      this._target = null;
+    }
   }
 
 }
@@ -67,6 +76,8 @@ p.addStone = function() {
 }
 
 p.attachObject = function(){
-  this.scene.remove(this._currentObject);
-  this._target.add(this._currentObject);
+  this._currentObject.isAttached = true;
+  this._attachedStones.push(this._currentObject);
+
+  this.addStone();
 }
