@@ -14,6 +14,7 @@ var Ball = require('./ball');
 var detector = require('./utils/detector');
 var ObjectPool = require('./utils/object-pool');
 var SnowChunk = require('./snow-chunk');
+var Sounds = require('./sounds');
 var DecorationEditor = require('./decoration-editor');
 
 var SHADOW_MAP_WIDTH = 1024*2;
@@ -72,6 +73,9 @@ mixin(Builder.prototype, {
 
   init: function() {
 
+    this._sounds = new Sounds();
+    this._sounds.init();
+
     this._stage = document.getElementById('stage');
     this._$createSnowmanBtn = $('#createSnowmanBtn');
 
@@ -89,10 +93,12 @@ mixin(Builder.prototype, {
 
     this._addEventListeners();
 
+    return;
+
     var ball = this._createNewBall( new THREE.Vector3(100,0,100), false);
     ball.ballRadius = 50;
     ball.update();
-    
+
     ball = this._createNewBall( new THREE.Vector3(-100,0,-100), false);
     ball.ballRadius = 30;
     ball.update();
@@ -249,7 +255,7 @@ mixin(Builder.prototype, {
     var el = $('#error')
     el.html('<iframe src="//player.vimeo.com/video/" width="800" height="500" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>');
     $('#errorWrapper').removeClass('inactive');
-  
+
   },
 
   _initLights: function(){
@@ -501,12 +507,12 @@ mixin(Builder.prototype, {
     }
 
     if( this._state === STATE_EDIT_SNOWMAN_HEAD && this._lookAtPosition ) {
-        var currentEditBall = this._decorationEditor.getCurrentBall();
+      var currentEditBall = this._decorationEditor.getCurrentBall();
 
-        this.camera.position.y += ((this._lookAtPosition.y + 40 + currentEditBall.ballRadius*2)- this.camera.position.y)*0.1;
-        this.camera.position.z += ((currentEditBall.ballRadius*3 + 60)- this.camera.position.z )*0.1;
-        this.camera.lookAtTarget.lerp(this._lookAtPosition,0.1);
-      }
+      this.camera.position.y += ((this._lookAtPosition.y + 40 + currentEditBall.ballRadius*2)- this.camera.position.y)*0.1;
+      this.camera.position.z += ((currentEditBall.ballRadius*3 + 60)- this.camera.position.z )*0.1;
+      this.camera.lookAtTarget.lerp(this._lookAtPosition,0.1);
+    }
 
     if( this._balls.length ) {
       var selectedBall = this._balls[this._currentBallSelected];
@@ -518,6 +524,9 @@ mixin(Builder.prototype, {
         else if( this._steerIsActive) {
           selectedBall.steerWithKeyboard(this._keyStatus);
         }
+        console.log(selectedBall.velocity.clone().lengthSq())
+
+        this._sounds.setRollVolume(selectedBall.velocity.clone().lengthSq());
 
         this.camera.position.lerp(selectedBall.mesh.position.clone().add(this._cameraOffset),0.1);
         var ball;

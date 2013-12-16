@@ -16,19 +16,18 @@ function DecorationEditor( scene, camera ) {
   this._stonePool.createObject = function(){
 
     var stoneGeo = new THREE.OctahedronGeometry(2,1);
-    
+    /*
     var vertices = stoneGeo.vertices;
     var vertex;
 
     for (var i = vertices.length - 1; i >= 0; i--) {
       vertex = vertices[i];
-      vertex.offset = new THREE.Vector3();
-      vertex.offset.y = Math.random()*4-2;
-      vertex.offset.x = Math.random()*4-2;
-      vertex.offset.z = Math.random()*4-12;
+      vertex.y += Math.random()*2-1;
+      vertex.x += Math.random()*2-1;
+      //vertex.z += Math.random()*2-1;
     }
-
-    var mesh = new THREE.Mesh( stoneGeo, new THREE.MeshLambertMaterial({shading:THREE.FlatShading, color:0x333333, ambient:0x333333}) );
+*/
+    var mesh = new THREE.Mesh( stoneGeo, new THREE.MeshLambertMaterial({shading:THREE.SmoothShading, color:0x333333, ambient:0x333333}) );
     return mesh;
   }
 }

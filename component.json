@@ -25,6 +25,7 @@
     "app/utils/object-pool.js",
     "app/utils/detector.js",
     "app/decoration-editor.js",
+    "app/sounds.js",
     "app/settings.js",
     "app/settings-ui.js",
     "app/builder.js",
