@@ -217,7 +217,14 @@ mixin(Builder.prototype, {
       this.sizeRatio = 2.5;
     }
 
-    this.renderer = new THREE.WebGLRenderer({canvas: document.getElementById('builderCanvas'),antialias:true});
+    try {
+      this.renderer = new THREE.WebGLRenderer({canvas: document.getElementById('builderCanvas'),antialias:true});
+    }
+    catch( err ) {
+      this._showFallback();
+      return;
+    }
+
     this.renderer.sortElements = false;
     this.renderer.setClearColor(0xffffff,1);
 
@@ -243,6 +250,13 @@ mixin(Builder.prototype, {
 
   },
 
+  _showFallback: function() {
+    var el = $('#error')
+    el.html('<iframe src="//player.vimeo.com/video/" width="800" height="500" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>');
+    $('#errorWrapper').removeClass('inactive');
+  
+  },
+
   _initLights: function(){
 
     this.ambientLight = new THREE.AmbientLight( 0x777777, 0.4 );
@@ -255,7 +269,7 @@ mixin(Builder.prototype, {
     //this.pointLight.position.set(0,1025,-1000);
     //this.scene.add(this.pointLight);
 
-    this.dirLight = new THREE.DirectionalLight( 0xffffff, 0.99);
+    this.dirLight = new THREE.DirectionalLight( 0xf9fafc, 0.97);
     this.dirLight.position.set( -500, 1400, -200  );
 
     this.dirLight.shadowMapWidth = 2048;
