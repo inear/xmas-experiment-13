@@ -6,8 +6,8 @@ var snowmanBtn = '<a class="js-build-snowman build-snowman-btn">BUTTON</a>'
 var copy = [
   //0
   {
-    mouse:'Click anywhere to create a ball',
-    touch:'Tap anywhere tp create a ball'
+    mouse:'Click anywhere in the snow to start!',
+    touch:'Tap anywhere in the snow to start!'
   },
   //1
   {
@@ -16,17 +16,17 @@ var copy = [
   },
   //2
   {
-    mouse:'Go on and create as many as you like',
+    mouse:'At least three of them would be great',
   },
   //3
   {
-    mouse:'Oh, you got three! Now press this '+ snowmanBtn,
-    touch:'Oh, you got three! Now tap this ' + snowmanBtn
+    mouse:'Perfect! You got three! Now press this '+ snowmanBtn,
+    touch:'Perfect! You got three! Now tap this ' + snowmanBtn
   },
   //4
   {
-    mouse:'Great! Start with placing the nose with mousedown',
-    touch:'Great! Drag and release to place the nose'
+    mouse:'Great! Start with placing the nose. Click to attach.',
+    touch:'Great! Start with placing the nose. Tap where you want it.'
   },
   //5
   {
@@ -57,19 +57,21 @@ p._show = function(){
     this.$contentEl.html( this._temporaryNote );
     this._temporaryNote = null;
     this._temporaryTimeoutId = setTimeout(function(){
-      console.log("timed out")
       self.toStep(self._currentStep, true);
     },this._temporaryNoteTimeOut*1000 )
 
   } else {
 
     this._currentStep = this._toStep;
+    this._toStep = null;
     var currentCopy = copy[this._currentStep]['mouse'];
     this.$contentEl.html( currentCopy );
 
     if( currentCopy.indexOf('BUTTON') !== -1 ){
       var btn = $('.js-build-snowman');
-      btn.bind('click', function(){
+      btn.bind('click', function(evt){
+        evt.preventDefault();
+        evt.stopPropagation();
         self.emit('createSnowman');
         self.hide();
       })
@@ -78,7 +80,7 @@ p._show = function(){
 
   this._inTransition = true;
 
-  TweenMax.to( this.$el,1,{delay:0.5, y:0, ease:Back.easeOut, force3D:true, onComplete: transitionDone});
+  TweenMax.fromTo( this.$el,1,{y:200},{delay:0.5, y:0, ease:Back.easeOut, force3D:true, onComplete: transitionDone});
 
   function transitionDone(){
     self._inTransition = false;
@@ -91,13 +93,10 @@ p._animationOut = function(){
 
   $('.js-build-snowman').unbind();
 
-  if( this._temporaryTimeoutId ) {
-    clearTimeout(this._temporaryTimeoutId);
-    this._temporaryTimeoutId = null;
-  }
+  this._clearTemporaryTimeouts();
 
   var self = this;
-  TweenMax.to(this.$el,0.3,{y:200, ease:Back.easeIn, force3D:true, onComplete: transitionDone });
+  TweenMax.fromTo(this.$el,0.3,{y:0},{y:200, ease:Back.easeIn, force3D:true, onComplete: transitionDone });
 
   function transitionDone(){
     self._inTransition = false;
@@ -108,12 +107,22 @@ p._animationOut = function(){
   }
 }
 
-p.toStep = function( step , force){
+p._clearTemporaryTimeouts = function(){
+  if( this._temporaryTimeoutId ) {
+    clearTimeout(this._temporaryTimeoutId);
+    this._temporaryTimeoutId = null;
+  }
+}
 
-  if( this._inTransition ) return;
+p.toStep = function( step , force){
 
   //test if it's the next step
   if( step === this._currentStep + 1 || force) {
+
+    if( this._inTransition ) {
+      TweenMax.killTweensOf(this.$el);
+    }
+
     //step is valid
     this._toStep = step;
 
@@ -133,15 +142,14 @@ p.hide = function(){
 
 p.temporaryNote = function(str, time ){
 
-  if( this._inTransition ) return;
+  this._inTransition = false;
+
+  this._clearTemporaryTimeouts();
 
   this._temporaryNote = str;
   this._temporaryNoteTimeOut = time;
-  if( !this._isActive ) {
-    this._show();
-  }
-  else {
-    this._animationOut();
-  }
+
+  this._show();
+
 
 }

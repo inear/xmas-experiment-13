@@ -13,19 +13,19 @@ function DecorationEditor( scene, camera ) {
   this._currentBall = null;
   this._projector = new THREE.Projector();
 
-  this._carrot = new THREE.Mesh( new THREE.CylinderGeometry(3,0.2,20,7,4),new THREE.MeshPhongMaterial({color:0xc45840, ambient:0x333333}) );
+  this._carrot = new THREE.Mesh( new THREE.CylinderGeometry(3,0.2,20,7,4),new THREE.MeshPhongMaterial({color:0xc45840, ambient:0x333333, side:THREE.DoubleSide}) );
   this._carrot.geometry.applyMatrix( new THREE.Matrix4().makeRotationX( - Math.PI / 2 ));
   this._carrot.geometry.applyMatrix( new THREE.Matrix4().makeRotationZ( - Math.PI));
-
+/*
   var vertices = this._carrot.geometry.vertices;
     var vertex;
     for (var i = vertices.length - 1; i >= 0; i--) {
       vertex = vertices[i];
       //vertex.y += Math.random()*0.3-0.15;
-      vertex.x += (Math.random()*0.3-0.15)*(20-vertex.z)/20;
+      //vertex.x += (Math.random()*0.3-0.15)*(20-vertex.z)/20;
       //vertex.z += Math.random()*0.3-0.15;
     }
-
+*/
   this._stonePool = new StonePool();
   this._stonePool.createObject = function(){
 

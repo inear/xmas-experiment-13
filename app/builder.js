@@ -459,7 +459,7 @@ mixin(Builder.prototype, {
     if( this._balls.length === 1 ) {
       this._tutorial.toStep(1);
     }
-    if( this._balls.length > 2) {
+    else if( this._balls.length === 3) {
       this._tutorial.toStep(3);
     }
 
@@ -551,6 +551,8 @@ mixin(Builder.prototype, {
   },
 
   _initEditMode: function(){
+    var self = this;
+
     this._decorationEditor = new DecorationEditor(this.scene, this.camera);
 
     this._state = STATE_EDIT_SNOWMAN_HEAD;
@@ -558,8 +560,14 @@ mixin(Builder.prototype, {
     this._decorationEditor.activeBall( this._snowmanBalls[2] );
 
     this._decorationEditor.addCarrot();
-
+    this._decorationEditor.on("attachedObject", onObjectAttached)
     this._tutorial.toStep(4);
+
+    function onObjectAttached( type, targetBall ){
+      if( type === 'carrot') {
+        self._tutorial.toStep(5);
+      }
+    }
 
   },
 
