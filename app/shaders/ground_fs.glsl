@@ -377,7 +377,7 @@ void main()
     #endif
 
     float depth = gl_FragCoord.z / gl_FragCoord.w;
-    float fogFactor = smoothstep( fogNear, fogFar, depth );
+    float fogFactor = smoothstep( 1000.0, 3000.0, depth );
     gl_FragColor = mix( gl_FragColor, vec4( fogColor, gl_FragColor.w ), fogFactor );
 
 }

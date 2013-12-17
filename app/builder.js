@@ -256,7 +256,7 @@ mixin(Builder.prototype, {
     //this.renderer.shadowMapDebug = true;
     //this.renderer.shadowMapCascade = true;
 
-    this.scene.fog = new THREE.Fog( 0xffffff, 1000, 6000 );
+    //this.scene.fog = new THREE.Fog( 0xffffff, 3000, 6000 );
 
     if (this.sizeRatio > 1) {
       this.renderer.domElement.style.webkitTransform = "scale3d("+this.sizeRatio+", "+this.sizeRatio+", 1)";
@@ -423,7 +423,6 @@ mixin(Builder.prototype, {
     largeGround.position.x = 2000;
     this.scene.add(largeGround);
 
-
     largeGround = new THREE.Mesh( new THREE.PlaneGeometry(2000,6000, 10,10 ), largeMaterial);
     largeGround.rotation.x = -90 * Math.PI / 180;
     largeGround.position.x = -2000;
@@ -438,6 +437,59 @@ mixin(Builder.prototype, {
     largeGround.rotation.x = -90 * Math.PI / 180;
     largeGround.position.z = 2000;
     this.scene.add(largeGround);
+
+    //fence
+    var finalGeo = new THREE.Geometry();
+    var poleMat = new THREE.MeshLambertMaterial({color:0x000000})
+    var h = 50;
+    var poleGeo = new THREE.CubeGeometry(4,h,4,2,2,2);
+    var pole = new THREE.Mesh(poleGeo,poleMat);
+
+    var areaSize = 1800
+    var areaSizeHalf = 1800*0.5
+
+    //horz
+    for (var pz = 0; pz < 2; pz++) {
+      for (var px = 0; px < 11; px++) {
+
+        pole.position.y = h*0.5;
+        pole.position.x = areaSize/10*px - areaSizeHalf;
+        pole.position.z = pz*areaSize-areaSizeHalf;
+        THREE.GeometryUtils.merge(finalGeo, pole);
+      };
+    }
+
+    //ribs
+    var ribWidth = areaSize/11 + 22;
+    var ribGeo = new THREE.CubeGeometry(ribWidth,3,1,2,2,2);
+    var rib = new THREE.Mesh(ribGeo,poleMat);
+
+    //horz
+    for (var pz = 0; pz < 2; pz++) {
+      for (var px = 0; px < 10; px++) {
+
+        rib.position.y = h*0.25;
+        rib.position.x = areaSize/10*px - areaSizeHalf + ribWidth*0.5 - 2;
+        rib.position.z = pz*areaSize-areaSizeHalf;
+        rib.rotation.z = (Math.random()*2-1)*Math.PI/180
+        THREE.GeometryUtils.merge(finalGeo, rib);
+
+        rib.position.y = h*0.75;
+        rib.position.x = areaSize/10*px - areaSizeHalf + ribWidth*0.5 - 2;
+        rib.position.z = pz*areaSize-areaSizeHalf;
+        rib.rotation.z = (Math.random()*2-1)*Math.PI/180
+        THREE.GeometryUtils.merge(finalGeo, rib);
+      };
+    }
+
+    var copy = finalGeo.clone();
+    copy.applyMatrix( new THREE.Matrix4().makeRotationY( - Math.PI / 2 ))
+    THREE.GeometryUtils.merge(finalGeo, copy);
+
+    var fence = new THREE.Mesh(finalGeo,poleMat);
+    fence.castShadow = true;
+    this.scene.add( fence );
+
 
   },
 
