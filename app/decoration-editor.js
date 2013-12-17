@@ -7,6 +7,7 @@ var StonePool = require('./utils/object-pool');
 function DecorationEditor( scene, camera ) {
   this.scene = scene;
   this.camera = camera;
+  this.currentType = "";
   this._attachedStones = [];
   this._target = null;
   this._currentBall = null;
@@ -37,6 +38,9 @@ function DecorationEditor( scene, camera ) {
       Math.random()*0.2+0.2,
       Math.random()*0.2+0.2
     )
+
+    mesh.id = 'stone';
+
     return mesh;
   }
 }
@@ -49,6 +53,7 @@ p.getCurrentBall = function(){
 }
 
 p.addCarrot = function( ball ){
+  this.currentType = "carrot";
   this._currentObject = this._carrot;
   this._target.add(this._currentObject);
 }
@@ -84,6 +89,7 @@ p.set3DCursor = function( position , normal ) {
 }
 
 p.addStone = function() {
+  this.currentType = "stone";
   this._currentObject = this._stonePool.getObject();
   this._target.add(this._currentObject);
 }
@@ -91,6 +97,8 @@ p.addStone = function() {
 p.attachObject = function(){
   this._currentObject.isAttached = true;
   this._attachedStones.push(this._currentObject);
+
+  this.emit("attachedObject", this.currentType, this._currentBall);
 
   this.addStone();
 }

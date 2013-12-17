@@ -26,6 +26,7 @@
     "app/utils/detector.js",
     "app/decoration-editor.js",
     "app/sounds.js",
+    "app/tutorial.js",
     "app/settings.js",
     "app/settings-ui.js",
     "app/builder.js",

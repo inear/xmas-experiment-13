@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
   <title>Snowman</title>
-  <meta name="description" content="A math and music journey for kids">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-  <meta name="description" content="A math and music journey for kids" />
-  <meta property="og:title" content="Plus & Minus" />
-  <meta property="og:url" content="http://inear.se/plusminus/" />
-  <link rel="image_src" href="http://inear.se/plusminus/assets/images/plusminus.jpg" />
-  <meta property="og:image" content="http://inear.se/plusminus/assets/images/plusminus.jpg" />
-  <meta property="og:description" content="A math and music journey for kids" />
+  <meta name="description" content="Play in the snow and create your own snowman" />
+  <meta property="og:title" content="Snowman" />
+  <!--<meta property="og:url" content="http://inear.se/plusminus/" />-->
+  <!--<link rel="image_src" href="http://inear.se/plusminus/assets/images/plusminus.jpg" />-->
+  <!--<meta property="og:image" content="http://inear.se/plusminus/assets/images/plusminus.jpg" />-->
+  <meta property="og:description" content="Play in the snow and create your own snowman" />
+  <link href='http://fonts.googleapis.com/css?family=Delius+Swash+Caps' rel='stylesheet' type='text/css'>
   <!-- @if NODE_ENV='dev' -->
   <link rel="stylesheet" href="build/main.css">
   <!-- @endif -->
@@ -26,7 +26,13 @@
     <canvas id="builderCanvas"></canvas>
     <canvas id="c" class="trail-canvas" width="1024" height="1024"></canvas>
   </div>
-  <a id="createSnowmanBtn" class="build-snowman-btn inactive">Create snowman</a>
+  <div id="instructions">
+    <div class="snowman-icon"></div>
+    <div class="instruction">
+      <div id="instructionContent" class="bubble-content"></div>
+      <div class="bubble-arrow-mask"><div class="bubble-arrow"></div></div>
+    </div>
+  </div>
   <div id="uiContainer"></div>
   <div id="errorWrapper" class="inactive table">
     <div id="error" class="table-cell"></div>
@@ -44,6 +50,17 @@
   <script type="text/javascript" src="vendors/TweenMax.js"></script>
   <script type="text/javascript" src="vendors/mousetrap.min.js"></script>
   <script type="text/javascript" src="vendors/howler.js"></script>
+
+  <script src="vendors/shaders/CopyShader.js"></script>
+  <script src="vendors/shaders/SSAOShader.js"></script>
+  <script src="vendors/shaders/FXAAShader.js"></script>
+  <script src="vendors/shaders/ConvolutionShader.js"></script>
+
+  <script src="vendors/postprocessing/EffectComposer.js"></script>
+  <script src="vendors/postprocessing/RenderPass.js"></script>
+  <script src="vendors/postprocessing/MaskPass.js"></script>
+  <script src="vendors/postprocessing/ShaderPass.js"></script>
+
   <script src='build/app.js'></script>
   <!-- endbuild -->
 

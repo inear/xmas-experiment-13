@@ -16,6 +16,8 @@ var ObjectPool = require('./utils/object-pool');
 var SnowChunk = require('./snow-chunk');
 var Sounds = require('./sounds');
 var DecorationEditor = require('./decoration-editor');
+var Tutorial = require('./tutorial')
+
 
 var SHADOW_MAP_WIDTH = 1024*2;
 var SHADOW_MAP_HEIGHT = 1024*2;
@@ -25,6 +27,8 @@ var STATE_ANIMATE_TO_SNOWMAN = "animate balls";
 var STATE_EDIT_SNOWMAN_HEAD = "edit snowman head";
 
 function Builder() {
+
+  this.usePostProcessing = false;
 
   this.groundSize = {width:2000,height:2000};
 
@@ -52,6 +56,8 @@ function Builder() {
   this.sizeRatio = 1;
   this.projector = new THREE.Projector();
 
+
+
   this._balls = [];
   this._ballMap = {};
   this._currentBallSelected = 0;
@@ -62,7 +68,7 @@ function Builder() {
 
   this._initSnowChunks();
 
-  this.settingsUI = new SettingsUI();
+  //this.settingsUI = new SettingsUI();
 
  // this._spawnSnowChunk = this._spawnSnowChunk.bind(this);
 }
@@ -77,21 +83,31 @@ mixin(Builder.prototype, {
     this._sounds.init();
 
     this._stage = document.getElementById('stage');
-    this._$createSnowmanBtn = $('#createSnowmanBtn');
 
     this._clock = new THREE.Clock();
 
     this._state = STATE_CREATING_BALLS;
 
     this._init3D();
+
+    if( this.usePostProcessing ) {
+      this._initPostProcessing();
+    }
+
     this._onResize();
     this._initLights();
     this._createSceneObjects();
 
-
     this._draw();
 
     this._addEventListeners();
+
+    this._tutorial = new Tutorial();
+
+    this._createSnowman = this._createSnowman.bind(this);
+    this._tutorial.once('createSnowman', this._createSnowman );
+
+    this._tutorial.toStep(0);
 
     return;
 
@@ -142,8 +158,6 @@ mixin(Builder.prototype, {
     this.mapListener(this._stage, 'mousemove', this._onMouseMove);
 
     //ui buttons
-
-    this.mapListener(this._$createSnowmanBtn[0], 'click', this._createSnowman);
 
     var list = ['left','right','up','down'];
 
@@ -255,6 +269,42 @@ mixin(Builder.prototype, {
     var el = $('#error')
     el.html('<iframe src="//player.vimeo.com/video/" width="800" height="500" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>');
     $('#errorWrapper').removeClass('inactive');
+
+  },
+
+  _initPostProcessing: function(){
+    //if (!tabletDevice && !ie && doPostprocessing) {
+
+      this.renderer.autoClear = false;
+
+      // postprocessing
+      this.composer = new THREE.EffectComposer( this.renderer );
+      this.composer.addPass( new THREE.RenderPass( this.scene, this.camera ) );
+
+      this.depthTarget = new THREE.WebGLRenderTarget( this.size.width/this.sizeRatio, this.size.height/this.sizeRatio, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
+
+      this.ssao = new THREE.ShaderPass( THREE.SSAOShader );
+      this.ssao.uniforms[ 'tDepth' ].value = this.depthTarget;
+      this.ssao.uniforms[ 'size' ].value.set( this.size.width/this.sizeRatio, this.size.height/this.sizeRatio );
+      this.ssao.uniforms[ 'cameraNear' ].value = 20;
+      this.ssao.uniforms[ 'cameraFar' ].value = 2000;
+      this.ssao.uniforms[ 'aoClamp' ].value = 0.6;
+      this.ssao.uniforms[ 'lumInfluence' ].value = 0.7;
+      this.ssao.uniforms[ 'onlyAO' ].value = 0;
+      this.composer.addPass( this.ssao );
+
+      this.fxaa = new THREE.ShaderPass( THREE.FXAAShader );
+      this.fxaa.uniforms[ 'resolution' ].value = new THREE.Vector2( 1/this.size.width, 1/(this.size.height) );
+      this.fxaa.renderToScreen = true;
+      this.composer.addPass( this.fxaa );
+
+      // depth pass
+      this.depthPassPlugin = new THREE.DepthPassPlugin();
+      this.depthPassPlugin.renderTarget = this.depthTarget;
+
+      this.renderer.addPrePlugin( this.depthPassPlugin );
+
+    //}
 
   },
 
@@ -373,6 +423,7 @@ mixin(Builder.prototype, {
     largeGround.position.x = 2000;
     this.scene.add(largeGround);
 
+
     largeGround = new THREE.Mesh( new THREE.PlaneGeometry(2000,6000, 10,10 ), largeMaterial);
     largeGround.rotation.x = -90 * Math.PI / 180;
     largeGround.position.x = -2000;
@@ -405,8 +456,11 @@ mixin(Builder.prototype, {
 
     this._currentBallSelected = this._balls.length-1;
 
+    if( this._balls.length === 1 ) {
+      this._tutorial.toStep(1);
+    }
     if( this._balls.length > 2) {
-      this._$createSnowmanBtn.removeClass("inactive");
+      this._tutorial.toStep(3);
     }
 
     if( !skipAnimate ) {
@@ -426,12 +480,10 @@ mixin(Builder.prototype, {
     var self = this;
     var snowman = new THREE.Object3D();
 
-    this._$createSnowmanBtn.addClass("inactive");
-
     this._state = STATE_ANIMATE_TO_SNOWMAN;
 
     var sortedBalls = this._balls.concat().sort(function(obj1, obj2) {
-      return (obj2.ballRadius - obj1.ballRadius);
+      return (obj2.ballRadius > obj1.ballRadius);
     }).splice(0,3);
 
     this._snowmanBalls = sortedBalls;
@@ -507,6 +559,8 @@ mixin(Builder.prototype, {
 
     this._decorationEditor.addCarrot();
 
+    this._tutorial.toStep(4);
+
   },
 
   _draw: function(){
@@ -530,6 +584,16 @@ mixin(Builder.prototype, {
     if( this._state === STATE_EDIT_SNOWMAN_HEAD && this._lookAtPosition ) {
       var currentEditBall = this._decorationEditor.getCurrentBall();
 
+      if( currentEditBall === this._snowmanBalls[0] && this._decorationEditor.currentType === "carrot" && !this._hasShownAlert) {
+        this._hasShownAlert = true;
+        this._tutorial.temporaryNote("Oh come on! We are celebrating the birth of Jesus for christ sake!",5);
+      }
+
+      if( currentEditBall === this._snowmanBalls[1] && this._decorationEditor.currentType === "carrot" && !this._hasShownAlert2) {
+        this._hasShownAlert2 = true;
+        this._tutorial.temporaryNote("It's a nose!",3);
+      }
+
       this.camera.position.y += ((this._lookAtPosition.y + 10 + currentEditBall.ballRadius*2)- this.camera.position.y)*0.1;
       this.camera.position.z += ((currentEditBall.ballRadius*3 + 60)- this.camera.position.z )*0.1;
       this.camera.lookAtTarget.lerp(this._lookAtPosition,0.1);
@@ -542,9 +606,11 @@ mixin(Builder.prototype, {
 
       if( this._state === STATE_CREATING_BALLS ) {
         if( this._mouseIsDown ) {
+          this._tutorial.toStep(2);
           selectedBall.steerWithMouse(this._normalizedMouse2D);
         }
         else if( this._steerIsActive) {
+          this._tutorial.toStep(2);
           selectedBall.steerWithKeyboard(this._keyStatus);
         }
 
@@ -560,7 +626,35 @@ mixin(Builder.prototype, {
       }
     }
 
-    this.renderer.render( this.scene, this.camera );
+    if( this.usePostProcessing ) {
+        this.depthPassPlugin.enabled = true;
+
+        this.scene.traverse( function( item ){
+          if( item.id !== 'stone' ) {
+
+            item.visible = false
+          }
+        })
+
+        this.ground.visible = false;
+
+        this.renderer.render( this.scene, this.camera, this.composer.renderTarget2, true );
+
+        this.depthPassPlugin.enabled = false;
+
+        this.scene.traverse( function( item ){
+          if( item.id !== 'stone' ) {
+            item.visible = true;
+          }
+        })
+
+
+        this.composer.render();
+      } else {
+        this.renderer.clear();
+        this.renderer.render( this.scene, this.camera );
+      }
+
 
     raf( this._draw );
   },
@@ -615,6 +709,20 @@ mixin(Builder.prototype, {
     this.camera.updateProjectionMatrix();
 
     this.renderer.setSize( winW/this.sizeRatio, winH/this.sizeRatio);
+
+    if( this.usePostProcessing ) {
+
+      this.depthTarget = new THREE.WebGLRenderTarget(  winW/this.sizeRatio,  winH/this.sizeRatio, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat } );
+
+      this.fxaa.uniforms[ 'resolution' ].value.set( 1 / winW, 1 / winH );
+      this.ssao.uniforms[ 'size' ].value.set( winW, winH );
+
+      this.depthPassPlugin.renderTarget = this.depthTarget;
+      this.ssao.uniforms[ 'tDepth' ].value = this.depthTarget;
+
+      this.composer.reset();
+
+    }
 
     //this._$stage.css({width:winW +"px",height:visibleHeight+"px"});
 
