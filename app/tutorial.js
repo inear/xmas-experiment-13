@@ -16,7 +16,8 @@ var copy = [
   },
   //2
   {
-    mouse:'At least three of them would be great',
+    mouse:'Create more by clicking the snow. At least three would be great.',
+    touch:'Create more by tapping the snow. At least three would be great.'
   },
   //3
   {

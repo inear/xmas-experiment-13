@@ -654,7 +654,7 @@ mixin(Builder.prototype, {
         this._tutorial.temporaryNote("It's a nose!",3);
       }
 
-      this.camera.position.y += ((this._lookAtPosition.y + 10 + currentEditBall.ballRadius*2)- this.camera.position.y)*0.1;
+      this.camera.position.y += ((this._lookAtPosition.y + 1120 + currentEditBall.ballRadius*2)- this.camera.position.y)*0.1;
       this.camera.position.z += ((currentEditBall.ballRadius*3 + 60)- this.camera.position.z )*0.1;
       this.camera.lookAtTarget.lerp(this._lookAtPosition,0.1);
       this.camera.lookAt(this.camera.lookAtTarget);

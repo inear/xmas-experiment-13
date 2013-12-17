@@ -66,6 +66,12 @@ p.makeRoomForSnowman = function( power ){
 
   this.ctx.fillStyle = radgrad;
   this.ctx.fillRect(512-60 - 40*power, 512-60-40*power , 120+ 80*power, 120 + 80*power);
+
+  this.ctx.fillStyle = 'rgba(170,170,170,0.6)';
+  this.ctx.lineWidth = 20;
+  this.ctx.strokeStyle = 'rgba(170,170,170,0.6)';
+  this.ctx.font = "bold 70px Calibri";
+  this.ctx.fillText("MERRY CHRISTMAS", 212, 612);
 }
 
 
