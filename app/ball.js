@@ -102,6 +102,16 @@ p.steerWithKeyboard =  function( keyboardStatus ){
 
 p.updateCollision = function(balls){
 
+  if(
+    ((this.mesh.position.x+this.velocity.x > 900-this.ballRadius) && this.velocity.x>0)||
+    ((this.mesh.position.x+this.velocity.x < -900+this.ballRadius) && this.velocity.x<0)||
+    ((this.mesh.position.z+this.velocity.z > 900-this.ballRadius) && this.velocity.z>0)||
+    ((this.mesh.position.z+this.velocity.z < -900+this.ballRadius) && this.velocity.z<0)
+  ) {
+    this.colliding = true;
+    return;
+  }
+
   if( balls.length <= 1 ) {
     this.colliding = false;
     return;
@@ -119,6 +129,7 @@ p.updateCollision = function(balls){
       }
     }
   }
+
   this.colliding = false;
 }
 
