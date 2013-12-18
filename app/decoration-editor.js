@@ -27,29 +27,34 @@ function DecorationEditor( scene, camera ) {
   branch1Geo.applyMatrix( new THREE.Matrix4().makeRotationY(Math.PI*-0.5));
 
   var branchMap = THREE.ImageUtils.loadTexture('assets/images/branches_01.jpg');
+  var branchMat = new THREE.MeshLambertMaterial({ map: branchMap, ambient:0x333333});
   branchMap.wrapT = branchMap.wrapS = THREE.RepeatWrapping;
-  this._branch1 = new THREE.Mesh( branch1Geo,new THREE.MeshPhongMaterial({ map: branchMap, ambient:0x333333}) );
+  this._branch1 = new THREE.Mesh( branch1Geo,branchMat );
   this._branch1.scale.set(0.8,0.8,0.8);
+  this._branch1.castShadows = true;
 
   var branch2Geo = loader.parse( JSON.parse(carrotGeometries.branch_02) ).geometry;
   branch2Geo.applyMatrix( new THREE.Matrix4().makeRotationZ(Math.PI*-0.5));
   branch2Geo.applyMatrix( new THREE.Matrix4().makeRotationY(Math.PI*-0.5));
 
-  var branchMap = THREE.ImageUtils.loadTexture('assets/images/branches_01.jpg');
-  this._branch2 = new THREE.Mesh( branch2Geo,new THREE.MeshPhongMaterial({ map: branchMap, ambient:0x333333}) );
+  this._branch2 = new THREE.Mesh( branch2Geo,branchMat);
   this._branch2.scale.set(0.8,0.8,0.8);
+  this._branch2.castShadows = true;
 
   this._stonePool = new StonePool();
+
+  var stoneMat = new THREE.MeshLambertMaterial({shading:THREE.SmoothShading, color:0x444444, ambient:0x333333});
+  var stoneGeo = new THREE.OctahedronGeometry(5,1);
+  
   this._stonePool.createObject = function(){
 
-    var stoneGeo = new THREE.OctahedronGeometry(5,1);
-
-    var mesh = new THREE.Mesh( stoneGeo, new THREE.MeshLambertMaterial({shading:THREE.SmoothShading, color:0x333333, ambient:0x333333}) );
-    mesh.castShadows = true;
+    var mesh = new THREE.Mesh( stoneGeo, stoneMat );
+    
+    var s = Math.random()*0.1;
     mesh.scale.set(
-      Math.random()*0.2+0.2,
-      Math.random()*0.2+0.2,
-      Math.random()*0.2+0.2
+      s+0.2,
+      s+0.2,
+      s+0.2
     )
 
     mesh.id = 'stone';

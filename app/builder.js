@@ -26,6 +26,9 @@ var STATE_ANIMATE_TO_SNOWMAN = "animate balls";
 var STATE_EDIT_SNOWMAN = "edit snowman";
 var STATE_COMPLETE = "edit complete";
 
+var CURSOR_OPEN_HAND = 'cursor open hand';
+var CURSOR_CLOSED_HAND = 'cursor closed hand';
+
 function Builder() {
 
   this.usePostProcessing = true;
@@ -34,6 +37,7 @@ function Builder() {
   this.groundSize = {width:2000,height:2000};
 
   this.size = {};
+  this._cursor = '';
   this._mouse2D = new THREE.Vector2();
   this._normalizedMouse2D = new THREE.Vector2();
   this._canCreateBallAt = new THREE.Vector3(-1,-1,0);
@@ -84,6 +88,7 @@ mixin(Builder.prototype, {
     this._sounds.init();
 
     this._stage = document.getElementById('stage');
+    this._$stage = $(document.getElementById('stage'));
 
     this._clock = new THREE.Clock();
 
@@ -768,6 +773,11 @@ mixin(Builder.prototype, {
       var intersect = intersects[0];
 
       if( intersect.object === this.ground && this._state === STATE_CREATING_BALLS ) {
+
+        if( this._cursor !== CURSOR_OPEN_HAND ) {
+          this._cursor = CURSOR_OPEN_HAND;
+          this._$stage.addClass('cursor-roll');
+        }
 
         if( !this._balls.length ) {
           this._canCreateBallAt.copy(intersect.point);
