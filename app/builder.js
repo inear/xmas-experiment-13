@@ -571,15 +571,19 @@ mixin(Builder.prototype, {
       self.trailCanvas.makeRoomForSnowman( self._snowmanBalls[0].ballRadius/40 );
       self.trailTexture.needsUpdate = true;
 
-      var ring = new THREE.Mesh(new THREE.TorusGeometry(30,10,8,14), new THREE.MeshPhongMaterial({wireframe:false,color:0xffffff,transparent:true,opacity:0.3,side:THREE.DoubleSide}));
-      self.scene.add(ring);
-      ring.rotation.x = Math.PI*0.5;
-      ring.position.y = 0;
+      self.smokeRing = new THREE.Mesh(new THREE.TorusGeometry(30,10,8,14), new THREE.MeshPhongMaterial({wireframe:false,color:0xffffff,transparent:true,opacity:0.3,side:THREE.DoubleSide}));
+      self.scene.add(self.smokeRing);
+      self.smokeRing.rotation.x = Math.PI*0.5;
+      self.smokeRing.position.y = 0;
 
-      TweenMax.to(ring.scale,2,{x:3,y:3,z:3})
-      TweenMax.to(ring.material,2.8,{opacity:0});
-      TweenMax.to(ring.position,2,{delay:0.8,y:0});
+      TweenMax.to(self.smokeRing.scale,2,{x:3,y:3,z:3})
+      TweenMax.to(self.smokeRing.material,2.8,{opacity:0, onComplete:transitionComplete});
+      TweenMax.to(self.smokeRing.position,2,{delay:0.8,y:0});
 
+      function transitionComplete(){
+        self.scene.remove(self.smokeRing);
+        self.smokeRing = undefined;
+      }
 
     },(1+0.4)*animationScale*1000)
 
@@ -693,26 +697,19 @@ mixin(Builder.prototype, {
 
     if( this.usePostProcessing ) {
         this.depthPassPlugin.enabled = true;
-        this.ground.visible = false;
-        this.scene.traverse( function( item ){
-          if( item.id !== 'stone' ) {
-
-            //item.visible = false
-          }
-        })
-
-        this.ground.visible = false;
+        this.ground.visible = true;
+        if( this.smokeRing ) {
+          this.smokeRing.visible = false
+        }
 
         this.renderer.render( this.scene, this.camera, this.composer.renderTarget2, true );
 
         this.depthPassPlugin.enabled = false;
 
-        this.scene.traverse( function( item ){
-          if( item.id !== 'stone' ) {
-            //item.visible = true;
-          }
-        })
         this.ground.visible = true;
+        if( this.smokeRing && this.smokeRing.material.opacity > 0 ) {
+          this.smokeRing.visible = true;
+        }
 
 
         this.composer.render();
