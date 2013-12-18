@@ -33,8 +33,8 @@ var copy = [
   },
   //5
   {
-    mouse:'Arms perhaps',
-    touch:'Arms perhaps'
+    mouse:'Arms perhaps?',
+    touch:'Arms perhaps?'
   },
   //6
   {

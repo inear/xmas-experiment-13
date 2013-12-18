@@ -2,13 +2,13 @@ module.exports = Sounds;
 
 function Sounds() {
   this.ambientTrack = new Howl({
-    urls: ['assets/audio/ambient-loop.m4a','assets/audio/ambient-loop.wav'],
+    urls: ['assets/audio/ambient-loop.m4a','assets/audio/ambient-loop.ogg','assets/audio/ambient-loop.mp3'],
     autoplay: true,
     loop: true
   });
 
   this.rollTrack = new Howl({
-    urls: ['assets/audio/snow-loop.m4a','assets/audio/snow-loop.wav'],
+    urls: ['assets/audio/snow-loop.m4a','assets/audio/snow-loop.ogg','assets/audio/snow-loop.mp3'],
     autoplay: true,
     loop: true
   });

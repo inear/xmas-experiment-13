@@ -777,11 +777,11 @@ mixin(Builder.prototype, {
       this.camera.position.z += (200+extraOffset - this.camera.position.z )*0.06;
       this.camera.lookAtTarget.lerp(this._greetingCameraCenter,0.1);
       this.camera.lookAt(this.camera.lookAtTarget);
-/*
+
       this.camera.position.x += Math.cos(time*0.1)*0.3;
       this.camera.position.y += Math.cos(time*0.02)*0.1;
       this.camera.position.z += Math.cos(time*0.05)*0.1;
-*/
+
     }
 
     if( this.usePostProcessing && this.postProcessingActivated ) {
