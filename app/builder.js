@@ -28,6 +28,7 @@ var STATE_EDIT_SNOWMAN_HEAD = "edit snowman head";
 function Builder() {
 
   this.usePostProcessing = true;
+  this.postProcessingActivated = false;
 
   this.groundSize = {width:2000,height:2000};
 
@@ -567,6 +568,11 @@ mixin(Builder.prototype, {
     }
 
     setTimeout(function(){
+
+      if( self.usePostProcessing ) {
+        self.postProcessingActivated = true;
+      }
+
       self.trailCanvas.makeRoomForSnowman( self._snowmanBalls[0].ballRadius/40 );
       self.trailTexture.needsUpdate = true;
 
@@ -694,7 +700,7 @@ mixin(Builder.prototype, {
       }
     }
 
-    if( this.usePostProcessing ) {
+    if( this.usePostProcessing && this.postProcessingActivated ) {
         this.depthPassPlugin.enabled = true;
         this.ground.visible = true;
         if( this.smokeRing ) {

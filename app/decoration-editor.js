@@ -19,7 +19,7 @@ function DecorationEditor( scene, camera ) {
   var carrotGeo = loader.parse( JSON.parse(carrotGeometries.carrot_01) ).geometry
   var carrotMap = THREE.ImageUtils.loadTexture('assets/images/carrot-small.jpg');
   carrotMap.wrapT = carrotMap.wrapS = THREE.RepeatWrapping;
-  this._carrot = new THREE.Mesh( carrotGeo,new THREE.MeshPhongMaterial({ map: carrotMap, ambient:0x333333}) );
+  this._carrot = new THREE.Mesh( carrotGeo,new THREE.MeshPhongMaterial({ map: carrotMap}) );
   this._carrot.scale.set(0.1,0.1,0.1);
   
   var branch1Geo = loader.parse( JSON.parse(carrotGeometries.branch_01) ).geometry;
