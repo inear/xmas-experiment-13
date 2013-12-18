@@ -28,7 +28,7 @@ var STATE_EDIT_SNOWMAN_HEAD = "edit snowman head";
 
 function Builder() {
 
-  this.usePostProcessing = false;
+  this.usePostProcessing = true;
 
   this.groundSize = {width:2000,height:2000};
 
@@ -512,7 +512,7 @@ mixin(Builder.prototype, {
       this._tutorial.toStep(1);
     }
     else if( this._balls.length === 3) {
-      this._tutorial.toStep(3);
+      this._tutorial.toStep(3,true);
     }
 
     if( !skipAnimate ) {
