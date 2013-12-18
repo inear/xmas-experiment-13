@@ -21,6 +21,11 @@ body {
 
 }
 
+.font-fooler {
+  font-family:  'Sniglet', cursive;
+  opacity:0;
+}
+
 #stage {
   width:100%;
   height:100%;
@@ -127,11 +132,33 @@ body {
   cursor: pointer;
   line-height: 42px;
   top: -2px;
+  margin: 0 8px;
+
+  @include animation( pulse 1s both infinite );
+
+  text-decoration:none;
 
   &:hover {
     color: #aaccff;
     background: #ffffff;
     box-shadow: 0px 0px 10px rgba( 0, 0, 0, 0.4 );
+  }
+}
+
+@include keyframes(pulse) {
+  0% {
+    color: #aaccff;
+    background: #486bab;
+  }
+
+  50% {
+    color: #ffffff;
+    background: #aaccff;
+  }
+
+  100% {
+    color: #aaccff;
+    background: #486bab;
   }
 }
 

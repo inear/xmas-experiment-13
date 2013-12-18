@@ -23,7 +23,8 @@ var SHADOW_MAP_HEIGHT = 1024*2;
 
 var STATE_CREATING_BALLS = "creating balls";
 var STATE_ANIMATE_TO_SNOWMAN = "animate balls";
-var STATE_EDIT_SNOWMAN_HEAD = "edit snowman head";
+var STATE_EDIT_SNOWMAN = "edit snowman";
+var STATE_COMPLETE = "edit complete";
 
 function Builder() {
 
@@ -51,12 +52,12 @@ function Builder() {
   this._onUpdateTrailPosition = this._onUpdateTrailPosition.bind(this);
   this._createSnowman = this._createSnowman.bind(this);
   this._initEditMode = this._initEditMode.bind(this);
+  this._onSnowmanEditDone = this._onSnowmanEditDone.bind(this);
   this._updateMousePicker = this._updateMousePicker.bind(this);
+  this._onTakePicture = this._onTakePicture.bind(this);
 
   this.sizeRatio = 1;
   this.projector = new THREE.Projector();
-
-
 
   this._balls = [];
   this._ballMap = {};
@@ -102,14 +103,16 @@ mixin(Builder.prototype, {
 
     this._addEventListeners();
 
-    this._tutorial = new Tutorial();
+    this._tutorial = new Tutorial(this.renderer);
 
     this._createSnowman = this._createSnowman.bind(this);
     this._tutorial.once('createSnowman', this._createSnowman );
+    this._tutorial.once('editDone', this._onSnowmanEditDone );
+    this._tutorial.on('takePicture', this._onTakePicture );
 
     this._tutorial.toStep(0);
 
-    return;
+    //return;
 
     var ball = this._createNewBall( new THREE.Vector3(100,0,100), false);
     ball.ballRadius = 50;
@@ -123,8 +126,13 @@ mixin(Builder.prototype, {
     ball.ballRadius = 20;
     ball.update();
 
-    this._createSnowman();
+    //this._createSnowman();
 
+  },
+
+  _onTakePicture: function(){
+
+    
   },
 
   _initSnowChunks: function(){
@@ -177,6 +185,11 @@ mixin(Builder.prototype, {
       }
 
       function keyUp() {
+
+        if( self._balls.length === 1) {
+          self._tutorial.toStep(2);
+        }
+
         self._keyStatus[dir] = false;
 
         //set steering flag
@@ -215,6 +228,10 @@ mixin(Builder.prototype, {
     if( this._decorationEditor && this._decorationEditor.getCurrentBall() ) {
       this._decorationEditor.attachObject();
     }
+
+    if( this._balls.length === 1) {
+      this._tutorial.toStep(2);
+    }
   },
 
   _init3D: function(){
@@ -233,7 +250,7 @@ mixin(Builder.prototype, {
     }
 
     try {
-      this.renderer = new THREE.WebGLRenderer({canvas: document.getElementById('builderCanvas'),antialias:true});
+      this.renderer = new THREE.WebGLRenderer({canvas: document.getElementById('builderCanvas'),antialias:true,preserveDrawingBuffer: true});
     }
     catch( err ) {
       this._showFallback();
@@ -611,13 +628,21 @@ mixin(Builder.prototype, {
 
   },
 
+  _onSnowmanEditDone: function(){
+    this._state = STATE_COMPLETE;
+    this.trailCanvas.showGreeting();
+    this.trailTexture.needsUpdate = true;
+    this._tutorial.toStep(7);
+    
+  },
+
   _initEditMode: function(){
     var self = this;
 
     this._decorationEditor = new DecorationEditor(this.scene, this.camera);
 
     setTimeout( function(){
-      self._state = STATE_EDIT_SNOWMAN_HEAD;
+      self._state = STATE_EDIT_SNOWMAN;
     },2000)
     
 
@@ -630,6 +655,9 @@ mixin(Builder.prototype, {
     function onObjectAttached( type, targetBall ){
       if( type === 'carrot') {
         self._tutorial.toStep(5);
+      }
+      else if( type === 'branch2') {
+        self._tutorial.toStep(6);
       }
     }
 
@@ -653,7 +681,7 @@ mixin(Builder.prototype, {
       this._updateMousePicker();
     }
 
-    if( this._state === STATE_EDIT_SNOWMAN_HEAD && this._lookAtPosition ) {
+    if( this._state === STATE_EDIT_SNOWMAN && this._lookAtPosition ) {
       var currentEditBall = this._decorationEditor.getCurrentBall();
 
       if( currentEditBall === this._snowmanBalls[0] && this._decorationEditor.currentType === "carrot" && !this._hasShownAlert) {
@@ -661,31 +689,28 @@ mixin(Builder.prototype, {
         this._tutorial.temporaryNote("Oh come on! We are celebrating the birth of Jesus for christ sake!",5);
       }
 
-      if( currentEditBall === this._snowmanBalls[1] && this._decorationEditor.currentType === "carrot" && !this._hasShownAlert2) {
+      /*if( currentEditBall === this._snowmanBalls[1] && this._decorationEditor.currentType === "carrot" && !this._hasShownAlert2) {
         this._hasShownAlert2 = true;
         this._tutorial.temporaryNote("It's a nose!",3);
-      }
+      }*/
 
-      this.camera.position.y += ((this._lookAtPosition.y + 10 + currentEditBall.ballRadius*2)- this.camera.position.y)*0.1;
-      this.camera.position.z += ((currentEditBall.ballRadius*3 + 60)- this.camera.position.z )*0.1;
+      //this.camera.position.y += ((this._lookAtPosition.y + 10 + currentEditBall.ballRadius*2)- this.camera.position.y)*0.1;
+      this.camera.position.y += ((this._lookAtPosition.y + 10 + this._normalizedMouse2D.y*-30 + currentEditBall.ballRadius*2)- this.camera.position.y)*0.1;
+      this.camera.position.z += ((currentEditBall.ballRadius*3 + 60 + this._normalizedMouse2D.y*10)- this.camera.position.z )*0.1;
       this.camera.lookAtTarget.lerp(this._lookAtPosition,0.1);
       this.camera.lookAt(this.camera.lookAtTarget);
 
     }
+    else if( this._state === STATE_CREATING_BALLS ) {
 
-    if( this._balls.length ) {
-      var selectedBall = this._balls[this._currentBallSelected];
-
-      if( this._state === STATE_CREATING_BALLS ) {
+      if( this._balls.length ) {
+        var selectedBall = this._balls[this._currentBallSelected];
+        
         if( this._mouseIsDown ) {
           selectedBall.steerWithMouse(this._normalizedMouse2D);
         }
         else if( this._steerIsActive) {
           selectedBall.steerWithKeyboard(this._keyStatus);
-        }
-
-        if( this._balls.length === 2 ) {
-          this._tutorial.toStep(2);
         }
 
         this._sounds.setRollVolume(selectedBall.velocity.clone().lengthSq());
@@ -699,30 +724,35 @@ mixin(Builder.prototype, {
         }
       }
     }
+    else if( this._state === STATE_COMPLETE ) {
+      this.camera.position.y += (150 - this.camera.position.y)*0.06;
+      this.camera.position.z += (200 - this.camera.position.z )*0.06;
+      //this.camera.position.x += (this._normalizedMouse2D.x*100 - this.camera.position.x )*0.06;
+      this.camera.lookAtTarget.lerp(this.scene.position,0.1);
+      this.camera.lookAt(this.camera.lookAtTarget);
+    } 
 
     if( this.usePostProcessing && this.postProcessingActivated ) {
-        this.depthPassPlugin.enabled = true;
-        this.ground.visible = true;
-        if( this.smokeRing ) {
-          this.smokeRing.visible = false
-        }
-
-        this.renderer.render( this.scene, this.camera, this.composer.renderTarget2, true );
-
-        this.depthPassPlugin.enabled = false;
-
-        this.ground.visible = true;
-        if( this.smokeRing && this.smokeRing.material.opacity > 0 ) {
-          this.smokeRing.visible = true;
-        }
-
-
-        this.composer.render();
-      } else {
-        this.renderer.clear();
-        this.renderer.render( this.scene, this.camera );
+      this.depthPassPlugin.enabled = true;
+      this.ground.visible = true;
+      if( this.smokeRing ) {
+        this.smokeRing.visible = false
       }
 
+      this.renderer.render( this.scene, this.camera, this.composer.renderTarget2, true );
+
+      this.depthPassPlugin.enabled = false;
+
+      this.ground.visible = true;
+      if( this.smokeRing && this.smokeRing.material.opacity > 0 ) {
+        this.smokeRing.visible = true;
+      }
+
+      this.composer.render();
+    } else {
+      this.renderer.clear();
+      this.renderer.render( this.scene, this.camera );
+    }
 
     raf( this._draw );
   },
@@ -737,7 +767,7 @@ mixin(Builder.prototype, {
     if ( intersects.length > 0 ) {
       var intersect = intersects[0];
 
-      if( intersect.object === this.ground ) {
+      if( intersect.object === this.ground && this._state === STATE_CREATING_BALLS ) {
 
         if( !this._balls.length ) {
           this._canCreateBallAt.copy(intersect.point);
@@ -754,11 +784,16 @@ mixin(Builder.prototype, {
           }
         }
       }
-      else if( intersect.object.id.length > 0 && intersect.object.id.indexOf("ball") !== -1 && this._state === STATE_EDIT_SNOWMAN_HEAD ) {
+      else if( this._state === STATE_EDIT_SNOWMAN && intersect.object.id.length > 0 && intersect.object.id.indexOf("ball") !== -1  ) {
         if( this._decorationEditor ) {
           this._decorationEditor.activeBall( intersect.object.parentObject);
           this._decorationEditor.set3DCursor(intersect.point, intersect.face.normal);
-          this._lookAtPosition = intersect.object.position.clone();
+          this._lookAtPosition = this._snowmanBalls[1].mesh.position.clone()//intersect.object.position.clone();
+        }
+      }
+      else {
+        if( this._decorationEditor ) {
+          this._decorationEditor.hideObject();
         }
       }
     }

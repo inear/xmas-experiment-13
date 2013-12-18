@@ -29,7 +29,7 @@ function DecorationEditor( scene, camera ) {
   var branchMap = THREE.ImageUtils.loadTexture('assets/images/branches_01.jpg');
   branchMap.wrapT = branchMap.wrapS = THREE.RepeatWrapping;
   this._branch1 = new THREE.Mesh( branch1Geo,new THREE.MeshPhongMaterial({ map: branchMap, ambient:0x333333}) );
-  this._branch1.scale.set(1,1,1);
+  this._branch1.scale.set(0.8,0.8,0.8);
 
   var branch2Geo = loader.parse( JSON.parse(carrotGeometries.branch_02) ).geometry;
   branch2Geo.applyMatrix( new THREE.Matrix4().makeRotationZ(Math.PI*-0.5));
@@ -37,7 +37,7 @@ function DecorationEditor( scene, camera ) {
 
   var branchMap = THREE.ImageUtils.loadTexture('assets/images/branches_01.jpg');
   this._branch2 = new THREE.Mesh( branch2Geo,new THREE.MeshPhongMaterial({ map: branchMap, ambient:0x333333}) );
-  this._branch2.scale.set(1,1,1);
+  this._branch2.scale.set(0.8,0.8,0.8);
 
   this._stonePool = new StonePool();
   this._stonePool.createObject = function(){
@@ -90,6 +90,7 @@ p.activeBall = function( ball ){
 
 p.set3DCursor = function( position , normal ) {
   if( this._currentObject ){
+    this._currentObject.visible = true;
     this._currentObject.position = this._target.worldToLocal(position.clone());
     this._currentObject.lookAt( this._currentObject.position.clone().multiplyScalar(10) );
     //this._currentObject.position.copy(position.sub( this._target.position));//.multiplyScalar(1.2);
@@ -137,5 +138,10 @@ p.attachObject = function(){
   else {
     this.addStone();
   } 
+}
 
+p.hideObject = function(){
+  if( this._currentObject ){
+    this._currentObject.visible = false;
+  }
 }

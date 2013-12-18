@@ -2,7 +2,9 @@ module.exports = Tutorial;
 
 var Emitter = require('emitter');
 
-var snowmanBtn = '<a class="js-build-snowman build-snowman-btn">BUTTON</a>'
+var snowmanBtn = '<a class="js-build-snowman build-snowman-btn">BUTTON</a>';
+var okBtn = '<a class="js-build-ok build-snowman-btn">OK</a>';
+var shotBtn = '<a class="js-build-shot build-snowman-btn">PICTURE</a>';
 var copy = [
   //0
   {
@@ -31,13 +33,25 @@ var copy = [
   },
   //5
   {
-    mouse:'Same thing, decorate the snowman with stones',
-    touch:'Same thing, decorate the snowman with stones'
+    mouse:'Arms perhaps',
+    touch:'Arms perhaps'
+  },
+  //6
+  {
+    mouse:'Decorate with stones, press '+ okBtn +' when you are done.',
+    touch:'Decorate with stones, tap '+ okBtn +' when you are done.'
+  },
+  //7
+  {
+    mouse:'Take a '+ shotBtn +' ?',
+    touch:'Take a '+ shotBtn +' ?',
+    
   },
 
 ]
 
-function Tutorial() {
+function Tutorial( renderer ) {
+  this.renderer = renderer;
   this.$el = $("#instructions");
   this.$contentEl = $("#instructionContent");
   this._currentStep = -1;
@@ -77,6 +91,28 @@ p._show = function(){
         self.hide();
       })
     }
+    else if( currentCopy.indexOf('OK') !== -1 ){
+      var btn = $('.js-build-ok');
+      btn.bind('click', function(evt){
+        evt.preventDefault();
+        evt.stopPropagation();
+        self.emit('editDone');
+        self.hide();
+      })
+    }
+    else if( currentCopy.indexOf('PICTURE') !== -1 ){
+      var btn = $('.js-build-shot');
+      
+      btn[0].href = this.renderer.domElement.toDataURL();
+      btn[0].download = "snowman-" + (Date.now()) + ".png";
+
+      btn.bind('click', function(evt){
+        //evt.preventDefault();
+        //evt.stopPropagation();
+        self.emit('takePicture');
+        self.hide();
+      })
+    }
   }
 
   this._inTransition = true;
@@ -93,6 +129,8 @@ p._animationOut = function(){
   this._inTransition = true;
 
   $('.js-build-snowman').unbind();
+  $('.js-build-ok').unbind();
+  $('.js-build-shot').unbind();
 
   this._clearTemporaryTimeouts();
 

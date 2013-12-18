@@ -66,15 +66,37 @@ p.makeRoomForSnowman = function( power ){
 
   this.ctx.fillStyle = radgrad;
   this.ctx.fillRect(512-60 - 40*power, 512-60-40*power , 120+ 80*power, 120 + 80*power);
-
-  this.ctx.fillStyle = 'rgba(170,170,170,0.6)';
-  this.ctx.lineWidth = 20;
-  this.ctx.strokeStyle = 'rgba(170,170,170,0.6)';
-  this.ctx.font = "bold 70px Calibri";
-  this.ctx.fillText("MERRY CHRISTMAS", 212, 612);
 }
 
+p.showGreeting = function(){
+  this.ctx.fillStyle = 'rgba(170,170,170,0.4)';
+  this.ctx.lineWidth = 3;
+  this.ctx.textAlign = 'center';
+  this.ctx.strokeStyle = 'rgba(255,255,255,1)';
+  this.ctx.font = "70px Sniglet";
+  
+  drawTextAlongArc(this.ctx, 'MERRY', 512, 512, 130, Math.PI*0.5);
+  this.ctx.font = "60px Sniglet";
+  drawTextAlongArc(this.ctx, 'XMAS', 512, 512, 50, Math.PI);
+}
 
 function angleBetween(point1, point2) {
   return Math.atan2( point2.x - point1.x, point2.y - point1.y );
+}
+
+function drawTextAlongArc(context, str, centerX, centerY, radius, angle) {
+  var len = str.length, s;
+  context.save();
+  context.translate(centerX, centerY);
+  context.rotate(-1 * angle / 2);
+  context.rotate(-1 * (angle / len) / 2);
+  for(var n = 0; n < len; n++) {
+    context.rotate(angle / len);
+    context.save();
+    context.translate(0, -1 * radius);
+    s = str[n];
+    context.fillText(s, 0, 0);
+    context.restore();
+  }
+  context.restore();
 }
