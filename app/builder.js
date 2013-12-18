@@ -68,6 +68,7 @@ function Builder() {
   this._balls = [];
   this._ballMap = {};
   this._currentBallSelected = 0;
+  this._currentBallHover = 0;
   this._snowmanBalls = [];
   this._lookAtPosition = null;
 
@@ -85,6 +86,11 @@ DomEventMap(Builder.prototype);
 mixin(Builder.prototype, {
 
   init: function() {
+
+    if( detector.isMobile ) {
+      this._showFallback();
+      return;
+    }
 
     this._sounds = new Sounds();
     this._sounds.init();
@@ -232,8 +238,13 @@ mixin(Builder.prototype, {
   _onMouseDown: function( evt ){
     this._mouseIsDown = true;
 
-    if( this._state === STATE_CREATING_BALLS && this._canCreateBallAt.x !== 5000 ) {
-      this._createNewBall(this._canCreateBallAt);
+    if( this._state === STATE_CREATING_BALLS ) {
+      if( this._canCreateBallAt.x !== 5000 ) {
+        this._createNewBall(this._canCreateBallAt);
+      }
+      else if( this._currentBallHover !== -1) {
+        this._currentBallSelected = this._currentBallHover;
+      }
     }
   },
 
@@ -301,6 +312,7 @@ mixin(Builder.prototype, {
     var el = $('#error')
     el.html('<iframe src="//player.vimeo.com/video/" width="800" height="500" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>');
     $('#errorWrapper').removeClass('inactive');
+    $("body").addClass("fallback-bg");
 
   },
 
@@ -765,11 +777,11 @@ mixin(Builder.prototype, {
       this.camera.position.z += (200+extraOffset - this.camera.position.z )*0.06;
       this.camera.lookAtTarget.lerp(this._greetingCameraCenter,0.1);
       this.camera.lookAt(this.camera.lookAtTarget);
-
+/*
       this.camera.position.x += Math.cos(time*0.1)*0.3;
       this.camera.position.y += Math.cos(time*0.02)*0.1;
       this.camera.position.z += Math.cos(time*0.05)*0.1;
-
+*/
     }
 
     if( this.usePostProcessing && this.postProcessingActivated ) {
@@ -804,31 +816,42 @@ mixin(Builder.prototype, {
     var raycaster = new THREE.Raycaster(this.camera.position,vector.sub(this.camera.position).normalize() );
     var intersects = raycaster.intersectObjects( this._collisionList );
 
-
-
     if ( intersects.length > 0 ) {
       var intersect = intersects[0];
 
-      if( intersect.object === this.groundPicker && this._state === STATE_CREATING_BALLS ) {
+      if( this._state === STATE_CREATING_BALLS ) {
 
-        if( this._cursor !== CURSOR_OPEN_HAND ) {
-          this._cursor = CURSOR_OPEN_HAND;
-          this._$stage.addClass('cursor-roll');
-        }
+        if( intersect.object === this.groundPicker ) {
 
-        if( !this._balls.length ) {
-          this._canCreateBallAt.copy(intersect.point);
-        }
-        else {
-          var canSpawn = true;
-          for (var i = this._balls.length - 1; i >= 0; i--) {
-            if(this._balls[i].mesh.position.distanceTo(intersect.point) < 60) {
-              canSpawn = false
-            }
+          this._currentBallHover = -1;
+
+          if( this._cursor !== CURSOR_OPEN_HAND ) {
+            this._cursor = CURSOR_OPEN_HAND;
+            this._$stage.addClass('cursor-roll');
           }
-          if( canSpawn ) {
+
+          if( !this._balls.length ) {
             this._canCreateBallAt.copy(intersect.point);
           }
+          else {
+            var canSpawn = true;
+            for (var i = this._balls.length - 1; i >= 0; i--) {
+              if(this._balls[i].mesh.position.distanceTo(intersect.point) < 60) {
+                canSpawn = false
+              }
+            }
+            if( canSpawn ) {
+              this._canCreateBallAt.copy(intersect.point);
+            }
+          }
+        }
+        else {
+
+          for (var i = this._balls.length - 1; i >= 0; i--) {
+            if( this._balls[i].mesh === intersect.object ) {
+              this._currentBallHover = i;
+            }
+          };
         }
       }
       else if( this._state === STATE_EDIT_SNOWMAN && intersect.object.id.length > 0 && intersect.object.id.indexOf("ball") !== -1  ) {

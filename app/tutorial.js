@@ -56,6 +56,7 @@ function Tutorial( renderer ) {
   this.$contentEl = $("#instructionContent");
   this._currentStep = -1;
   this._isActive = false;
+  this.$el.removeClass("inactive")
 }
 
 var p = Tutorial.prototype;

@@ -180,7 +180,7 @@ p.update = function(){
     //this._spawnSnowChunk();
 
     if( this.ballRadius < 35 && this.ballOffsetY === 0) {
-      this.ballRadius += 0.23;
+      this.ballRadius += 0.03;
     }
 
     this.emit("trailPositionUpdate",
