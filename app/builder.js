@@ -16,8 +16,7 @@ var ObjectPool = require('./utils/object-pool');
 var SnowChunk = require('./snow-chunk');
 var Sounds = require('./sounds');
 var DecorationEditor = require('./decoration-editor');
-var Tutorial = require('./tutorial')
-
+var Tutorial = require('./tutorial');
 
 var SHADOW_MAP_WIDTH = 1024*2;
 var SHADOW_MAP_HEIGHT = 1024*2;

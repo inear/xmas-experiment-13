@@ -3,6 +3,8 @@ module.exports = DecorationEditor;
 var Emitter = require('emitter');
 
 var StonePool = require('./utils/object-pool');
+var carrotGeometries = require('./geometries/package.js');
+var loader = new THREE.JSONLoader( true );
 
 function DecorationEditor( scene, camera ) {
   this.scene = scene;
@@ -13,19 +15,30 @@ function DecorationEditor( scene, camera ) {
   this._currentBall = null;
   this._projector = new THREE.Projector();
 
-  this._carrot = new THREE.Mesh( new THREE.CylinderGeometry(3,0.2,20,7,4),new THREE.MeshPhongMaterial({color:0xc45840, ambient:0x333333, side:THREE.DoubleSide}) );
-  this._carrot.geometry.applyMatrix( new THREE.Matrix4().makeRotationX( - Math.PI / 2 ));
-  this._carrot.geometry.applyMatrix( new THREE.Matrix4().makeRotationZ( - Math.PI));
-/*
-  var vertices = this._carrot.geometry.vertices;
-    var vertex;
-    for (var i = vertices.length - 1; i >= 0; i--) {
-      vertex = vertices[i];
-      //vertex.y += Math.random()*0.3-0.15;
-      //vertex.x += (Math.random()*0.3-0.15)*(20-vertex.z)/20;
-      //vertex.z += Math.random()*0.3-0.15;
-    }
-*/
+  //this._carrot = new THREE.Mesh( new THREE.CylinderGeometry(3,0.2,20,7,4),new THREE.MeshPhongMaterial({color:0xc45840, ambient:0x333333, side:THREE.DoubleSide}) );
+  var carrotGeo = loader.parse( JSON.parse(carrotGeometries.carrot_01) ).geometry
+  var carrotMap = THREE.ImageUtils.loadTexture('assets/images/carrot-small.jpg');
+  carrotMap.wrapT = carrotMap.wrapS = THREE.RepeatWrapping;
+  this._carrot = new THREE.Mesh( carrotGeo,new THREE.MeshPhongMaterial({ map: carrotMap, ambient:0x333333}) );
+  this._carrot.scale.set(0.1,0.1,0.1);
+  
+  var branch1Geo = loader.parse( JSON.parse(carrotGeometries.branch_01) ).geometry;
+  branch1Geo.applyMatrix( new THREE.Matrix4().makeRotationZ(Math.PI*-0.5));
+  branch1Geo.applyMatrix( new THREE.Matrix4().makeRotationY(Math.PI*-0.5));
+
+  var branchMap = THREE.ImageUtils.loadTexture('assets/images/branches_01.jpg');
+  branchMap.wrapT = branchMap.wrapS = THREE.RepeatWrapping;
+  this._branch1 = new THREE.Mesh( branch1Geo,new THREE.MeshPhongMaterial({ map: branchMap, ambient:0x333333}) );
+  this._branch1.scale.set(1,1,1);
+
+  var branch2Geo = loader.parse( JSON.parse(carrotGeometries.branch_02) ).geometry;
+  branch2Geo.applyMatrix( new THREE.Matrix4().makeRotationZ(Math.PI*-0.5));
+  branch2Geo.applyMatrix( new THREE.Matrix4().makeRotationY(Math.PI*-0.5));
+
+  var branchMap = THREE.ImageUtils.loadTexture('assets/images/branches_01.jpg');
+  this._branch2 = new THREE.Mesh( branch2Geo,new THREE.MeshPhongMaterial({ map: branchMap, ambient:0x333333}) );
+  this._branch2.scale.set(1,1,1);
+
   this._stonePool = new StonePool();
   this._stonePool.createObject = function(){
 
@@ -52,11 +65,6 @@ p.getCurrentBall = function(){
   return this._currentBall;
 }
 
-p.addCarrot = function( ball ){
-  this.currentType = "carrot";
-  this._currentObject = this._carrot;
-  this._target.add(this._currentObject);
-}
 
 p.activeBall = function( ball ){
 
@@ -88,6 +96,26 @@ p.set3DCursor = function( position , normal ) {
   }
 }
 
+
+p.addCarrot = function( ball ){
+  this.currentType = "carrot";
+  this._currentObject = this._carrot;
+  this._target.add(this._currentObject);
+}
+
+
+p.addBranch1 = function( ball ){
+  this.currentType = "branch1";
+  this._currentObject = this._branch1;
+  this._target.add(this._currentObject);
+}
+
+p.addBranch2 = function( ball ){
+  this.currentType = "branch2";
+  this._currentObject = this._branch2;
+  this._target.add(this._currentObject);
+}
+
 p.addStone = function() {
   this.currentType = "stone";
   this._currentObject = this._stonePool.getObject();
@@ -100,5 +128,14 @@ p.attachObject = function(){
 
   this.emit("attachedObject", this.currentType, this._currentBall);
 
-  this.addStone();
+  if( this.currentType === "carrot") {
+    this.addBranch1();
+  }
+  else if( this.currentType === "branch1") { 
+    this.addBranch2(); 
+  }
+  else {
+    this.addStone();
+  } 
+
 }

@@ -1,4 +1,9 @@
 'use strict';
+
+var fs = require('fs');
+var path = require('path');
+var json = require('component-json');
+
 var stringToJs = require('component-string');
 
 module.exports = function(grunt) {
@@ -63,6 +68,24 @@ module.exports = function(grunt) {
           'app/shaders/**/*.glsl',
         ],
         tasks: ['component_build:dev']
+      },
+      geometries: {
+        files: ['geometries/**/*.obj'],
+        tasks: ['geometries']
+      }
+    },
+
+    three_obj: {
+      dist: {
+        src: ['geometries/**/*.obj']
+      }
+    },
+
+    bundles: {
+      geometries: {
+        name: '',
+        src: 'geometries',
+        dest: 'app/geometries/'
       }
     },
 
@@ -112,7 +135,7 @@ module.exports = function(grunt) {
         sourceUrls: false,
         configure: function(builder) {
           builder.use(stringToJs);
-          //builder.use(json());
+          builder.use(json());
         }
       },
       prod: {
@@ -124,6 +147,7 @@ module.exports = function(grunt) {
         sourceUrls: false,
         configure: function(builder) {
           builder.use(stringToJs);
+          builder.use(json());
         }
       }
     },
@@ -165,6 +189,8 @@ module.exports = function(grunt) {
 
   });
 
+
+
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-contrib-watch');
@@ -179,11 +205,49 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-preprocess');
   grunt.loadNpmTasks('grunt-usemin');
   grunt.loadNpmTasks('grunt-shell');
+  grunt.loadNpmTasks('grunt-three-obj');
 
+  grunt.registerMultiTask('bundles', 'Generates bundles', function() {
+    var basepath = this.data.src;
+    var dest = this.data.dest;
+    var folder = fs.readdirSync(basepath);
+    
+    var folderpath = basepath;
+    var isFirst = true;
+
+    if (!fs.lstatSync(folderpath).isDirectory()) {
+      return;
+    }
+
+    var output = 'module.exports = {';
+
+    fs.readdirSync(folderpath).forEach(function(filename) {
+      if (path.extname(filename) !== '.js') {
+        return;
+      }
+
+      if (!isFirst) {
+        output += ',';
+      }
+
+      var content = grunt.file.read(path.join(folderpath, filename));
+      output += '"' + path.basename(filename, '.js') + '":' + JSON.stringify(content);
+
+      isFirst = false;
+    });
+
+    output += '}';
+
+    grunt.file.write(dest + '/package.js', output);
+  });
+  
+
+  grunt.registerTask('geometries', ['three_obj','bundles']);
 
   grunt.registerTask('default', ['dev']);
 
   grunt.registerTask('prod', [
+      'geometries',
       'env:prod',
       //'clean:prod',
       'compass:prod',
@@ -200,6 +264,7 @@ module.exports = function(grunt) {
 
   grunt.registerTask('server', ['connect:dev']);
   grunt.registerTask('dev', [
+    'geometries',
     'env:dev',
     'compass:dev', 
     //'shell:installcomponents',

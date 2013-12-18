@@ -22,6 +22,7 @@
     "base-css"
   ],
   "scripts": [
+    "app/geometries/package.js",
     "app/utils/object-pool.js",
     "app/utils/detector.js",
     "app/decoration-editor.js",
