@@ -40,9 +40,11 @@ function Builder() {
   this._cursor = '';
   this._mouse2D = new THREE.Vector2();
   this._normalizedMouse2D = new THREE.Vector2();
+  this._collisionList = [];
   this._canCreateBallAt = new THREE.Vector3(-1,-1,0);
 
   this._cameraOffset = new THREE.Vector3(0,300,300);
+  this._greetingCameraCenter = new THREE.Vector3(0,10,0);
   this._mouseMoved = false;
   this._steerIsActive = false;
   this._keyStatus = Object.call(this);
@@ -117,7 +119,7 @@ mixin(Builder.prototype, {
 
     this._tutorial.toStep(0);
 
-    //return;
+    return;
 
     var ball = this._createNewBall( new THREE.Vector3(100,0,100), false);
     ball.ballRadius = 50;
@@ -137,7 +139,7 @@ mixin(Builder.prototype, {
 
   _onTakePicture: function(){
 
-    
+
   },
 
   _initSnowChunks: function(){
@@ -172,6 +174,12 @@ mixin(Builder.prototype, {
 
     //ui buttons
 
+    Mousetrap.bind('space', function(){
+      self._greetingCameraCenter = new THREE.Vector3(0,20,-50);
+      self.trailCanvas.showGreeting();
+      self.trailTexture.needsUpdate = true;
+    })
+
     var list = ['left','right','up','down'];
 
     forEach(list,function(dir){
@@ -179,7 +187,8 @@ mixin(Builder.prototype, {
       Mousetrap.bind(dir, keyDown, 'keydown');
       Mousetrap.bind(dir, keyUp, 'keyup');
 
-      function keyDown() {
+      function keyDown( evt ) {
+        evt.preventDefault();
         self._keyStatus[dir] = true;
         self._steerIsActive = true;
 
@@ -189,7 +198,8 @@ mixin(Builder.prototype, {
 
       }
 
-      function keyUp() {
+      function keyUp(evt) {
+        evt.preventDefault();
 
         if( self._balls.length === 1) {
           self._tutorial.toStep(2);
@@ -255,7 +265,7 @@ mixin(Builder.prototype, {
     }
 
     try {
-      this.renderer = new THREE.WebGLRenderer({canvas: document.getElementById('builderCanvas'),antialias:true,preserveDrawingBuffer: true});
+      this.renderer = new THREE.WebGLRenderer({canvas: document.getElementById('builderCanvas'),antialias:false,preserveDrawingBuffer: true});
     }
     catch( err ) {
       this._showFallback();
@@ -338,10 +348,6 @@ mixin(Builder.prototype, {
     var hemiLight = new THREE.HemisphereLight( 0xfefefe,0xdce9f8 , 0.6 );
     this.scene.add(hemiLight);
 
-    //this.pointLight = new THREE.PointLight( 0xffffff, 0.8,1000);
-    //this.pointLight.position.set(0,1025,-1000);
-    //this.scene.add(this.pointLight);
-
     this.dirLight = new THREE.DirectionalLight( 0xf9fafc, 0.97);
     this.dirLight.position.set( -500, 1400, -200  );
 
@@ -349,10 +355,10 @@ mixin(Builder.prototype, {
     this.dirLight.shadowMapHeight = 2048;
 
     this.dirLight.shadowCameraNear = 1150;
-    this.dirLight.shadowCameraFar = 2300;
+    this.dirLight.shadowCameraFar = 2500;
     this.dirLight.shadowDarkness = 0.3;
     this.dirLight.shadowBias = 0.039;
-    //this.dirLight.shadowCameraFov = 50;
+
     this.dirLight.shadowCameraLeft = -1224;
     this.dirLight.shadowCameraRight = 1224;
     this.dirLight.shadowCameraTop = 1224;
@@ -413,9 +419,14 @@ mixin(Builder.prototype, {
     this.ground.castShadow = false;
     this.ground.rotation.x = - 90 * Math.PI / 180;
     this.ground.position.y = 0;
-
     this.scene.add(this.ground);
 
+
+    this.groundPicker = new THREE.Mesh( new THREE.PlaneGeometry(this.groundSize.width,this.groundSize.height,10,10), new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:0,wireframe:false}))
+    this.groundPicker.rotation.x = - 90 * Math.PI / 180;
+    this.groundPicker.id = "groundPicker";
+    this.scene.add(this.groundPicker);
+    this._collisionList.push(this.groundPicker);
 
     //distance material
     var finalSnowUniform2 = THREE.ShaderLib["phong"].uniforms;
@@ -483,20 +494,20 @@ mixin(Builder.prototype, {
 
     //ribs
     var ribWidth = areaSize/11 + 22;
-    var ribGeo = new THREE.CubeGeometry(ribWidth,3,1,2,2,2);
+    var ribGeo = new THREE.CubeGeometry(ribWidth,5,1,2,2,2);
     var rib = new THREE.Mesh(ribGeo,poleMat);
 
     //horz
     for (var pz = 0; pz < 2; pz++) {
       for (var px = 0; px < 10; px++) {
 
-        rib.position.y = h*0.25;
+        rib.position.y = h*0.35;
         rib.position.x = areaSize/10*px - areaSizeHalf + ribWidth*0.5 - 2;
         rib.position.z = pz*areaSize-areaSizeHalf;
         rib.rotation.z = (Math.random()*2-1)*Math.PI/180
         THREE.GeometryUtils.merge(finalGeo, rib);
 
-        rib.position.y = h*0.75;
+        rib.position.y = h*0.85;
         rib.position.x = areaSize/10*px - areaSizeHalf + ribWidth*0.5 - 2;
         rib.position.z = pz*areaSize-areaSizeHalf;
         rib.rotation.z = (Math.random()*2-1)*Math.PI/180
@@ -522,6 +533,7 @@ mixin(Builder.prototype, {
 
     this._balls.push(newBall);
     this._ballMap[newBall.mesh] = newBall;
+    this._collisionList.push(newBall.mesh);
 
     if( position ) {
       newBall.mesh.position.x = position.x
@@ -567,7 +579,7 @@ mixin(Builder.prototype, {
     for (var i = 0; i < 3; i++) {
       ball = sortedBalls[i];
       ball.belongsToSnowman = true;
-
+      console.log(ball.ballRadius);
       currentHeight += ball.ballRadius + 3 + 3*i;
       ball.finalY = currentHeight;
       TweenMax.to(ball.mesh.position,1*animationScale,{delay:1*i,y:1250, ease:Sine.easeInOut, onComplete:ballInCenter, onCompleteParams:[ball]});
@@ -635,10 +647,13 @@ mixin(Builder.prototype, {
 
   _onSnowmanEditDone: function(){
     this._state = STATE_COMPLETE;
-    this.trailCanvas.showGreeting();
-    this.trailTexture.needsUpdate = true;
-    this._tutorial.toStep(7);
-    
+
+    var self = this;
+    setTimeout(function(){
+      self._tutorial.toStep(7);
+
+      self.trailTexture.needsUpdate = true;
+    },2000)
   },
 
   _initEditMode: function(){
@@ -649,7 +664,7 @@ mixin(Builder.prototype, {
     setTimeout( function(){
       self._state = STATE_EDIT_SNOWMAN;
     },2000)
-    
+
 
     this._decorationEditor.activeBall( this._snowmanBalls[2] );
 
@@ -691,7 +706,11 @@ mixin(Builder.prototype, {
 
       if( currentEditBall === this._snowmanBalls[0] && this._decorationEditor.currentType === "carrot" && !this._hasShownAlert) {
         this._hasShownAlert = true;
-        this._tutorial.temporaryNote("Oh come on! We are celebrating the birth of Jesus for christ sake!",5);
+        this._tutorial.temporaryNote("Oh come on! We are celebrating the birth of Jesus for christ sake!",25);
+      }
+
+      if( currentEditBall === this._snowmanBalls[2] && this._decorationEditor.currentType === "carrot" ) {
+        this._tutorial.toStep(4,true);
       }
 
       /*if( currentEditBall === this._snowmanBalls[1] && this._decorationEditor.currentType === "carrot" && !this._hasShownAlert2) {
@@ -700,8 +719,8 @@ mixin(Builder.prototype, {
       }*/
 
       //this.camera.position.y += ((this._lookAtPosition.y + 10 + currentEditBall.ballRadius*2)- this.camera.position.y)*0.1;
-      this.camera.position.y += ((this._lookAtPosition.y + 10 + this._normalizedMouse2D.y*-30 + currentEditBall.ballRadius*2)- this.camera.position.y)*0.1;
-      this.camera.position.z += ((currentEditBall.ballRadius*3 + 60 + this._normalizedMouse2D.y*10)- this.camera.position.z )*0.1;
+      this.camera.position.y += ((this._lookAtPosition.y + this._snowmanBalls[2].mesh.position.y + this._snowmanBalls[2].ballRadius + this._normalizedMouse2D.y*-30)- this.camera.position.y)*0.1;
+      //this.camera.position.z += ((currentEditBall.ballRadius*3 + 60 + this._normalizedMouse2D.y*10)- this.camera.position.z )*0.1;
       this.camera.lookAtTarget.lerp(this._lookAtPosition,0.1);
       this.camera.lookAt(this.camera.lookAtTarget);
 
@@ -710,7 +729,7 @@ mixin(Builder.prototype, {
 
       if( this._balls.length ) {
         var selectedBall = this._balls[this._currentBallSelected];
-        
+
         if( this._mouseIsDown ) {
           selectedBall.steerWithMouse(this._normalizedMouse2D);
         }
@@ -728,14 +747,20 @@ mixin(Builder.prototype, {
           ball.update();
         }
       }
+
+      this.camera.position.x += Math.cos(time*0.1)*0.3;
+      this.camera.position.y += Math.cos(time*0.02)*0.1;
+      this.camera.position.z += Math.cos(time*0.05)*0.1;
     }
     else if( this._state === STATE_COMPLETE ) {
-      this.camera.position.y += (150 - this.camera.position.y)*0.06;
+
+      this.camera.position.y += (150 + this._snowmanBalls[2].mesh.position.y - this.camera.position.y)*0.06;
       this.camera.position.z += (200 - this.camera.position.z )*0.06;
       //this.camera.position.x += (this._normalizedMouse2D.x*100 - this.camera.position.x )*0.06;
-      this.camera.lookAtTarget.lerp(this.scene.position,0.1);
+      this.camera.lookAtTarget.lerp(this._greetingCameraCenter,0.1);
       this.camera.lookAt(this.camera.lookAtTarget);
-    } 
+
+    }
 
     if( this.usePostProcessing && this.postProcessingActivated ) {
       this.depthPassPlugin.enabled = true;
@@ -767,12 +792,14 @@ mixin(Builder.prototype, {
     this.projector.unprojectVector( vector,this.camera);
 
     var raycaster = new THREE.Raycaster(this.camera.position,vector.sub(this.camera.position).normalize() );
-    var intersects = raycaster.intersectObjects( this.scene.children );
+    var intersects = raycaster.intersectObjects( this._collisionList );
+
+
 
     if ( intersects.length > 0 ) {
       var intersect = intersects[0];
 
-      if( intersect.object === this.ground && this._state === STATE_CREATING_BALLS ) {
+      if( intersect.object === this.groundPicker && this._state === STATE_CREATING_BALLS ) {
 
         if( this._cursor !== CURSOR_OPEN_HAND ) {
           this._cursor = CURSOR_OPEN_HAND;

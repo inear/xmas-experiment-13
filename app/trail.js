@@ -48,7 +48,7 @@ p.update = function(id,x,y,radius) {
     radgrad.addColorStop(1, 'rgba('+lastColor+','+lastColor+','+lastColor+',0)');
 
     this.ctx.fillStyle = radgrad;
-    this.ctx.fillRect(interpolateX-20, interpolateY-20, 40, 40);
+    this.ctx.fillRect(interpolateX-30, interpolateY-30, 60, 60);
   }
 
   this.prevID = id;
@@ -74,7 +74,7 @@ p.showGreeting = function(){
   this.ctx.textAlign = 'center';
   this.ctx.strokeStyle = 'rgba(255,255,255,1)';
   this.ctx.font = "70px Sniglet";
-  
+
   drawTextAlongArc(this.ctx, 'MERRY', 512, 512, 130, Math.PI*0.5);
   this.ctx.font = "60px Sniglet";
   drawTextAlongArc(this.ctx, 'XMAS', 512, 512, 50, Math.PI);

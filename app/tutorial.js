@@ -45,7 +45,7 @@ var copy = [
   {
     mouse:'Take a '+ shotBtn +' ?',
     touch:'Take a '+ shotBtn +' ?',
-    
+
   },
 
 ]
@@ -102,7 +102,7 @@ p._show = function(){
     }
     else if( currentCopy.indexOf('PICTURE') !== -1 ){
       var btn = $('.js-build-shot');
-      
+
       btn[0].href = this.renderer.domElement.toDataURL();
       btn[0].download = "snowman-" + (Date.now()) + ".png";
 

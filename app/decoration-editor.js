@@ -21,7 +21,7 @@ function DecorationEditor( scene, camera ) {
   carrotMap.wrapT = carrotMap.wrapS = THREE.RepeatWrapping;
   this._carrot = new THREE.Mesh( carrotGeo,new THREE.MeshPhongMaterial({ map: carrotMap}) );
   this._carrot.scale.set(0.1,0.1,0.1);
-  
+
   var branch1Geo = loader.parse( JSON.parse(carrotGeometries.branch_01) ).geometry;
   branch1Geo.applyMatrix( new THREE.Matrix4().makeRotationZ(Math.PI*-0.5));
   branch1Geo.applyMatrix( new THREE.Matrix4().makeRotationY(Math.PI*-0.5));
@@ -45,11 +45,11 @@ function DecorationEditor( scene, camera ) {
 
   var stoneMat = new THREE.MeshLambertMaterial({shading:THREE.SmoothShading, color:0x444444, ambient:0x333333});
   var stoneGeo = new THREE.OctahedronGeometry(5,1);
-  
+
   this._stonePool.createObject = function(){
 
     var mesh = new THREE.Mesh( stoneGeo, stoneMat );
-    
+
     var s = Math.random()*0.1;
     mesh.scale.set(
       s+0.2,
@@ -107,6 +107,8 @@ p.addCarrot = function( ball ){
   this.currentType = "carrot";
   this._currentObject = this._carrot;
   this._target.add(this._currentObject);
+  var scale = 0.1*this._currentBall.ballRadius/30*2;
+  this._currentObject.scale.set(scale,scale,scale)
 }
 
 
@@ -137,12 +139,12 @@ p.attachObject = function(){
   if( this.currentType === "carrot") {
     this.addBranch1();
   }
-  else if( this.currentType === "branch1") { 
-    this.addBranch2(); 
+  else if( this.currentType === "branch1") {
+    this.addBranch2();
   }
   else {
     this.addStone();
-  } 
+  }
 }
 
 p.hideObject = function(){

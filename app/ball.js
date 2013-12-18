@@ -16,6 +16,19 @@ ballBumpMap.wrapT = ballBumpMap.wrapS = THREE.RepeatWrapping;
 
 var STATIC_ID = -1;
 
+var snowBallGeo = new THREE.IcosahedronGeometry(this.ballRadius,3);
+snowBallGeo.isDynamic = true;
+
+var vertices = snowBallGeo.vertices;
+var vertex;
+for (var i = vertices.length - 1; i >= 0; i--) {
+  vertex = vertices[i];
+  vertex.offset = new THREE.Vector3();
+  vertex.offset.y = Math.random()*4-2;
+  vertex.offset.x = Math.random()*4-2;
+  vertex.offset.z = Math.random()*4-2;
+};
+
 function Ball( scene) {
   this.id = "ball_" + STATIC_ID++
   this.groundSize = {width:2000,height:2000};
@@ -29,23 +42,18 @@ function Ball( scene) {
   this.ballOffsetY = 0;
   this._positionDirty = false;
 
-  this.snowBallGeo = new THREE.IcosahedronGeometry(this.ballRadius,3);
-  this.snowBallGeo.isDynamic = true;
 
-  var vertices = this.snowBallGeo.vertices;
-  var vertex;
-  for (var i = vertices.length - 1; i >= 0; i--) {
-    vertex = vertices[i];
-    vertex.offset = new THREE.Vector3();
-    vertex.offset.y = Math.random()*4-2;
-    vertex.offset.x = Math.random()*4-2;
-    vertex.offset.z = Math.random()*4-2;
-  };
 
   this.snowballMaterial = new THREE.MeshPhongMaterial({ map:ballMap,perPixel:true, color: 0xeeeeee, ambient:0xeeeeee, bumpMap: ballBumpMap, bumpScale:3, specularMap: reflectionMap, specular:0x999999,shininess:4 });
 
+  var snowBall = new THREE.Mesh( snowBallGeo.clone(), this.snowballMaterial);
+  var vertices = snowBall.geometry.vertices;
+  var vertex;
+  for (var i = vertices.length - 1; i >= 0; i--) {
+    vertex = vertices[i];
+    vertex.offset = snowBallGeo.vertices[i].offset.clone();
+  }
 
-  var snowBall = new THREE.Mesh( this.snowBallGeo, this.snowballMaterial);
   snowBall.castShadow = true;
   snowBall.receiveShadow = false;
   snowBall.position.y = 40;
@@ -67,8 +75,8 @@ Emitter(p);
 p.steerWithMouse =  function( mousePoint  ){
 
   var rotateSpeedFactor = 70/100*(100-this.ballRadius);
-  this.velocity.x += (mousePoint.x*2.5 - this.velocity.x)/rotateSpeedFactor;
-  this.velocity.z += (mousePoint.y*2.5 - this.velocity.z)/rotateSpeedFactor;
+  this.velocity.x += (mousePoint.x*3.5 - this.velocity.x)/rotateSpeedFactor;
+  this.velocity.z += (mousePoint.y*3.5 - this.velocity.z)/rotateSpeedFactor;
 
   this._positionDirty = true;
 
@@ -171,7 +179,7 @@ p.update = function(){
 
     //this._spawnSnowChunk();
 
-    if( this.ballRadius < 65 && this.ballOffsetY === 0) {
+    if( this.ballRadius < 35 && this.ballOffsetY === 0) {
       this.ballRadius += 0.03;
     }
 
@@ -195,8 +203,9 @@ p.update = function(){
     //if( this.up.negate().dot( snowBall.position.clone().sub(worldVector).normalize()) < 0.2 ) {
     //if( (worldVector.y < snowBall.position.y - this.ballRadius + 10) || (vertex.length() < this.ballRadius-3) ) {
 
-      vertex.hasUpdated = true;
+
       //vertex.setLength(this.ballRadius + Math.random()*2.3);
+      //vertex.setLength(this.ballRadius-vertex.offset.y*this.ballRadius/60);
       vertex.setLength(this.ballRadius-vertex.offset.y*this.ballRadius/60);
 
     /*}
