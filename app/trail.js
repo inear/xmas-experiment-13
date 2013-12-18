@@ -57,7 +57,7 @@ p.update = function(id,x,y,radius) {
 
 p.makeRoomForSnowman = function( power ){
 
-  var radgrad = this.ctx.createRadialGradient(512,512,10+40*power,512,512,20 + 40*power);
+  var radgrad = this.ctx.createRadialGradient(512,512,10+20*power,512,512,20 + 20*power);
   var pressure = 170;// - Math.floor(55 + 200*this.radius/60);
   var lastColor = 255;// - Math.floor(255*this.radius/40);
   radgrad.addColorStop(0, 'rgba('+pressure+','+pressure+','+pressure+',0.3)');

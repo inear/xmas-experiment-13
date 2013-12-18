@@ -286,10 +286,10 @@ mixin(Builder.prototype, {
       this.ssao = new THREE.ShaderPass( THREE.SSAOShader );
       this.ssao.uniforms[ 'tDepth' ].value = this.depthTarget;
       this.ssao.uniforms[ 'size' ].value.set( this.size.width/this.sizeRatio, this.size.height/this.sizeRatio );
-      this.ssao.uniforms[ 'cameraNear' ].value = 20;
-      this.ssao.uniforms[ 'cameraFar' ].value = 2000;
+      this.ssao.uniforms[ 'cameraNear' ].value = 10;
+      this.ssao.uniforms[ 'cameraFar' ].value = 1000;
       this.ssao.uniforms[ 'aoClamp' ].value = 0.6;
-      this.ssao.uniforms[ 'lumInfluence' ].value = 0.7;
+      this.ssao.uniforms[ 'lumInfluence' ].value = 0.9;
       this.ssao.uniforms[ 'onlyAO' ].value = 0;
       this.composer.addPass( this.ssao );
 
@@ -607,7 +607,10 @@ mixin(Builder.prototype, {
 
     this._decorationEditor = new DecorationEditor(this.scene, this.camera);
 
-    this._state = STATE_EDIT_SNOWMAN_HEAD;
+    setTimeout( function(){
+      self._state = STATE_EDIT_SNOWMAN_HEAD;
+    },2000)
+    
 
     this._decorationEditor.activeBall( this._snowmanBalls[2] );
 
@@ -666,12 +669,14 @@ mixin(Builder.prototype, {
 
       if( this._state === STATE_CREATING_BALLS ) {
         if( this._mouseIsDown ) {
-          this._tutorial.toStep(2);
           selectedBall.steerWithMouse(this._normalizedMouse2D);
         }
         else if( this._steerIsActive) {
-          this._tutorial.toStep(2);
           selectedBall.steerWithKeyboard(this._keyStatus);
+        }
+
+        if( this._balls.length === 2 ) {
+          this._tutorial.toStep(2);
         }
 
         this._sounds.setRollVolume(selectedBall.velocity.clone().lengthSq());
@@ -688,11 +693,11 @@ mixin(Builder.prototype, {
 
     if( this.usePostProcessing ) {
         this.depthPassPlugin.enabled = true;
-
+        this.ground.visible = false;
         this.scene.traverse( function( item ){
           if( item.id !== 'stone' ) {
 
-            item.visible = false
+            //item.visible = false
           }
         })
 
@@ -704,9 +709,10 @@ mixin(Builder.prototype, {
 
         this.scene.traverse( function( item ){
           if( item.id !== 'stone' ) {
-            item.visible = true;
+            //item.visible = true;
           }
         })
+        this.ground.visible = true;
 
 
         this.composer.render();
