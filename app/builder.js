@@ -380,7 +380,7 @@ mixin(Builder.prototype, {
 
     var diffuseMap = THREE.ImageUtils.loadTexture('assets/images/snow-diffuse4.jpg');
     diffuseMap.wrapT = diffuseMap.wrapS = THREE.RepeatWrapping;
-
+    this.diffuseMap = diffuseMap;
     var groundGeo = new THREE.PlaneGeometry(this.groundSize.width,this.groundSize.height,150,150);
 
     var snowUniforms = {
@@ -550,7 +550,7 @@ mixin(Builder.prototype, {
     }
 
     if( !skipAnimate ) {
-      TweenMax.fromTo( newBall,2.7,{ballRadius:5},{ballRadius:15});
+      TweenMax.fromTo( newBall,0.3,{ballRadius:5},{ballRadius:15});
     }
 
     return newBall;
@@ -579,7 +579,7 @@ mixin(Builder.prototype, {
     for (var i = 0; i < 3; i++) {
       ball = sortedBalls[i];
       ball.belongsToSnowman = true;
-      console.log(ball.ballRadius);
+      ball.snowmanIndex = i
       currentHeight += ball.ballRadius + 3 + 3*i;
       ball.finalY = currentHeight;
       TweenMax.to(ball.mesh.position,1*animationScale,{delay:1*i,y:1250, ease:Sine.easeInOut, onComplete:ballInCenter, onCompleteParams:[ball]});
@@ -597,34 +597,40 @@ mixin(Builder.prototype, {
     function ballInCenter( ball ) {
       ball.mesh.position.x = 0;
       ball.mesh.position.z = 0;
-      TweenMax.to(ball.mesh.position,0.7*animationScale,{ y: ball.finalY, ease:Back.easeOut, easeParams:[0.3]  });
+      TweenMax.to(ball.mesh.position,0.7*animationScale,{ y: ball.finalY, ease:Sine.easeIn, onComplete:showSmokeRing, onCompleteParams:[ball] });
+      TweenMax.to(ball.mesh.rotation,0.2*animationScale,{ x: "0.1",delay:0.6,ease:Sine.easeOut });
+
+      function showSmokeRing( ball ) {
+
+        if( ball.snowmanIndex === 0) {
+          self.trailCanvas.makeRoomForSnowman( self._snowmanBalls[0].ballRadius/40 );
+          self.trailTexture.needsUpdate = true;
+        }
+
+        var smokeRing = new THREE.Mesh(new THREE.TorusGeometry(30-ball.snowmanIndex*8,10-ball.snowmanIndex*2,8,14), new THREE.MeshPhongMaterial({map: self.diffuseMap,wireframe:false,transparent:true,opacity:0.6}));
+        self.scene.add(smokeRing);
+        smokeRing.scale.set(0.3,0.1,0.3)
+        smokeRing.rotation.x = Math.PI*0.5;
+        smokeRing.position.y = ball.mesh.position.y - ball.ballRadius +10;
+        var toScale = 2-ball.snowmanIndex*0.5;
+        TweenMax.to(smokeRing.scale,1,{x:toScale,y:toScale,z:toScale,ease:Sine.easeOut})
+        TweenMax.to(smokeRing.material,1,{opacity:0, onComplete:transitionComplete, onCompleteParams:[smokeRing]});
+        TweenMax.to(smokeRing.position,0.8,{delay:0,y:smokeRing.position.y-15, ease:Sine.easeIn});
+
+        function transitionComplete( ring ){
+          self.scene.remove(ring);
+          ring = undefined;
+
+          //last ring
+          if( ball.snowmanIndex === 2) {
+            if( self.usePostProcessing ) {
+              self.postProcessingActivated = true;
+            }
+          }
+        }
+      }
       //TweenMax.to(ball.mesh.rotation,1*animationScale,{delay:0.4,y: "-0.5" });
     }
-
-    setTimeout(function(){
-
-      if( self.usePostProcessing ) {
-        self.postProcessingActivated = true;
-      }
-
-      self.trailCanvas.makeRoomForSnowman( self._snowmanBalls[0].ballRadius/40 );
-      self.trailTexture.needsUpdate = true;
-
-      self.smokeRing = new THREE.Mesh(new THREE.TorusGeometry(30,10,8,14), new THREE.MeshPhongMaterial({wireframe:false,color:0xffffff,transparent:true,opacity:0.3,side:THREE.DoubleSide}));
-      self.scene.add(self.smokeRing);
-      self.smokeRing.rotation.x = Math.PI*0.5;
-      self.smokeRing.position.y = 0;
-
-      TweenMax.to(self.smokeRing.scale,2,{x:3,y:3,z:3})
-      TweenMax.to(self.smokeRing.material,2.8,{opacity:0, onComplete:transitionComplete});
-      TweenMax.to(self.smokeRing.position,2,{delay:0.8,y:0});
-
-      function transitionComplete(){
-        self.scene.remove(self.smokeRing);
-        self.smokeRing = undefined;
-      }
-
-    },(1+0.4)*animationScale*1000)
 
     //animate camera
     TweenMax.to(this.camera.position,2*animationScale,{ease:Sine.easeInOut,x:0,y:currentHeight+50,z:240,onUpdate:updateCamera,onComplete:cameraInPlace});
@@ -753,12 +759,16 @@ mixin(Builder.prototype, {
       this.camera.position.z += Math.cos(time*0.05)*0.1;
     }
     else if( this._state === STATE_COMPLETE ) {
+      var extraOffset = this._snowmanBalls[2].mesh.position.y
 
-      this.camera.position.y += (150 + this._snowmanBalls[2].mesh.position.y - this.camera.position.y)*0.06;
-      this.camera.position.z += (200 - this.camera.position.z )*0.06;
-      //this.camera.position.x += (this._normalizedMouse2D.x*100 - this.camera.position.x )*0.06;
+      this.camera.position.y += (100+extraOffset*2 - this.camera.position.y)*0.06;
+      this.camera.position.z += (200+extraOffset - this.camera.position.z )*0.06;
       this.camera.lookAtTarget.lerp(this._greetingCameraCenter,0.1);
       this.camera.lookAt(this.camera.lookAtTarget);
+
+      this.camera.position.x += Math.cos(time*0.1)*0.3;
+      this.camera.position.y += Math.cos(time*0.02)*0.1;
+      this.camera.position.z += Math.cos(time*0.05)*0.1;
 
     }
 

@@ -60,7 +60,7 @@ function Ball( scene) {
 
   this.scene.add(snowBall);
 
-  TweenMax.fromTo( this,2.7,{ballOffsetY:10},{ballOffsetY:0});
+  TweenMax.fromTo( this,1.7,{ballOffsetY:10},{ballOffsetY:0});
 
   this.mesh = snowBall;
   this.mesh.id = this.id;
@@ -180,7 +180,7 @@ p.update = function(){
     //this._spawnSnowChunk();
 
     if( this.ballRadius < 35 && this.ballOffsetY === 0) {
-      this.ballRadius += 0.03;
+      this.ballRadius += 0.23;
     }
 
     this.emit("trailPositionUpdate",
