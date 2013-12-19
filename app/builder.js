@@ -323,8 +323,21 @@ mixin(Builder.prototype, {
 
   _showFallback: function() {
     var el = $('#error')
-    el.html('<iframe src="//player.vimeo.com/video/82333173" width="800" height="500" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>');
+    el.html('<iframe id="fallback" src="//player.vimeo.com/video/82333173" width="100%" height="100%"" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>');
+
+    this.$fallback = el.find('#fallback');
+
     $('#errorWrapper').removeClass('inactive');
+
+    var self = this;
+
+    this.mapListener(window, 'resize', this._onResize);
+    this.mapListener(window, 'orientationchange', function() {
+       self._onResize();
+    });
+
+    this._onResize();
+
     $("body").addClass("fallback-bg");
 
   },
@@ -888,6 +901,28 @@ mixin(Builder.prototype, {
     this.size.width = winW;
     this.size.height = winH;
     this.size.sizeRatio = this.sizeRatio;
+
+    if( this.$fallback ) {
+
+      var w = winW-40;
+      var h = w/1280*720;
+
+      if( h > winH ) {
+        h = winH-40;
+        w = h/720*1280;
+      }
+
+      if( w > winW ) {
+        w = winW-40;
+        h = w/1280*720;
+      }
+
+
+      this.$fallback.width(w);
+      this.$fallback.height(h);
+
+      return;
+    }
 
     this.camera.aspect = winW / winH;
     this.camera.updateProjectionMatrix();
