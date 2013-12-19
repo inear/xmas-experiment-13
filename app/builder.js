@@ -323,7 +323,7 @@ mixin(Builder.prototype, {
 
   _showFallback: function() {
     var el = $('#error')
-    el.html('<iframe src="//player.vimeo.com/video/" width="800" height="500" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>');
+    el.html('<iframe src="//player.vimeo.com/video/82333173" width="800" height="500" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>');
     $('#errorWrapper').removeClass('inactive');
     $("body").addClass("fallback-bg");
 
