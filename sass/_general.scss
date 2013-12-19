@@ -154,9 +154,17 @@ body {
   text-decoration:none;
 
   &:hover {
+    @include animation( none 1s both infinite );
     color: #aaccff;
     background: #ffffff;
     box-shadow: 0px 0px 10px rgba( 0, 0, 0, 0.4 );
+  }
+
+  &:active {
+    @include animation( none 1s both infinite );
+    color: #aaccff;
+    background: #eeeeee;
+    box-shadow: 0px 0px 0px rgba( 0, 0, 0, 0.4 );
   }
 }
 
