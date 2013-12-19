@@ -153,6 +153,7 @@ mixin(Builder.prototype, {
 
   _onTakePicture: function(){
     this._tutorial.toStep(8);
+    _gaq.push(['_trackEvent','Picture taken']);
   },
 
   _initSnowChunks: function(){
@@ -322,6 +323,9 @@ mixin(Builder.prototype, {
   },
 
   _showFallback: function() {
+
+    _gaq.push(['_trackPageview','fallback']);
+
     var el = $('#error')
     el.html('<iframe id="fallback" src="//player.vimeo.com/video/82333173" width="100%" height="100%"" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>');
 
@@ -591,6 +595,8 @@ mixin(Builder.prototype, {
       TweenMax.fromTo( newBall,0.3,{ballRadius:5},{ballRadius:15});
     }
 
+    _gaq.push(['_trackEvent','Create ball' + this._balls.length ]);
+
     return newBall;
   },
 
@@ -603,6 +609,8 @@ mixin(Builder.prototype, {
 
     var self = this;
     var snowman = new THREE.Object3D();
+
+    _gaq.push(['_trackEvent','Create snowman']);
 
     this._state = STATE_ANIMATE_TO_SNOWMAN;
 
@@ -692,6 +700,8 @@ mixin(Builder.prototype, {
 
   _onSnowmanEditDone: function(){
     this._state = STATE_COMPLETE;
+
+    _gaq.push(['_trackEvent','Snowman done']);
 
     var self = this;
     setTimeout(function(){
