@@ -24,10 +24,6 @@ body {
 
 }
 
-.cursor-roll {
-  cursor: url('../assets/images/cursor-openhand.gif');
-}
-
 .font-fooler {
   font-family:  'Sniglet', cursive;
   opacity:0;
@@ -39,6 +35,18 @@ body {
   position:absolute;
   top:0;
   left:0;
+
+  &.cursor-openhand {
+    cursor: url('../assets/images/openhand.cur'),auto;
+  }
+
+  &.cursor-closedhand {
+    cursor: url('../assets/images/closedhand.cur'),auto;
+  }
+
+  &.cursor-pointer {
+    cursor: pointer;
+  }
 }
 
 #uiContainer {

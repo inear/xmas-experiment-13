@@ -28,6 +28,7 @@ var STATE_COMPLETE = "edit complete";
 
 var CURSOR_OPEN_HAND = 'cursor open hand';
 var CURSOR_CLOSED_HAND = 'cursor closed hand';
+var CURSOR_POINTER = 'cursor pointer';
 
 function Builder() {
 
@@ -750,6 +751,11 @@ mixin(Builder.prototype, {
 
         if( this._mouseIsDown ) {
           selectedBall.steerWithMouse(this._normalizedMouse2D);
+
+          if( this._cursor !== CURSOR_CLOSED_HAND ) {
+            this._cursor = CURSOR_CLOSED_HAND;
+            this._$stage.removeClass('cursor-openhand').removeClass('cursor-pointer').addClass('cursor-closedhand');
+          }
         }
         else if( this._steerIsActive) {
           selectedBall.steerWithKeyboard(this._keyStatus);
@@ -825,9 +831,9 @@ mixin(Builder.prototype, {
 
           this._currentBallHover = -1;
 
-          if( this._cursor !== CURSOR_OPEN_HAND ) {
-            this._cursor = CURSOR_OPEN_HAND;
-            this._$stage.addClass('cursor-roll');
+          if( this._cursor !== CURSOR_POINTER && !this._mouseIsDown) {
+            this._cursor = CURSOR_POINTER;
+            this._$stage.removeClass('cursor-openhand').removeClass('cursor-closedhand').addClass('cursor-pointer');
           }
 
           if( !this._balls.length ) {
@@ -846,6 +852,11 @@ mixin(Builder.prototype, {
           }
         }
         else {
+
+          if( this._cursor !== CURSOR_OPEN_HAND && !this._mouseIsDown) {
+            this._cursor = CURSOR_OPEN_HAND;
+            this._$stage.removeClass('cursor-pointer').removeClass('cursor-closedhand').addClass('cursor-openhand');
+          }
 
           for (var i = this._balls.length - 1; i >= 0; i--) {
             if( this._balls[i].mesh === intersect.object ) {
