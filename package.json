@@ -23,6 +23,9 @@
     "grunt-usemin": "~0.1.12",
     "grunt-preprocess": "~3.0.1",
     "grunt-env": "~0.4.0",
-    "grunt-contrib-concat": "~0.3.0"
+    "grunt-contrib-concat": "~0.3.0",
+    "component-json": "~0.1.4",
+    "component-string": "~0.1.2",
+    "grunt-three-obj": "~0.3.0"
   }
 }
