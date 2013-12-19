@@ -73,9 +73,6 @@ function Builder() {
   this._snowmanBalls = [];
   this._lookAtPosition = null;
 
-
-
-
   this._initSnowChunks();
 
   //this.settingsUI = new SettingsUI();

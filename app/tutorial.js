@@ -48,8 +48,8 @@ var copy = [
   },
   //8
   {
-    mouse:'Merry cristmas everybody!',
-    touch:'Merry cristmas everybody!',
+    mouse:'Merry Cristmas everybody!',
+    touch:'Merry Cristmas everybody!',
   },
 ]
 
