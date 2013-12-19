@@ -32,7 +32,7 @@ var CURSOR_POINTER = 'cursor pointer';
 
 function Builder() {
 
-  this.usePostProcessing = false;
+  this.usePostProcessing = !detector.isMobile && !detector.isTablet;
   this.postProcessingActivated = false;
 
   this.groundSize = {width:2000,height:2000};
@@ -653,6 +653,7 @@ mixin(Builder.prototype, {
           if( ball.snowmanIndex === 2) {
             if( self.usePostProcessing ) {
               self.postProcessingActivated = true;
+              self._onResize();
             }
           }
         }
@@ -801,18 +802,12 @@ mixin(Builder.prototype, {
     if( this.usePostProcessing && this.postProcessingActivated ) {
       this.depthPassPlugin.enabled = true;
       this.ground.visible = true;
-      if( this.smokeRing ) {
-        this.smokeRing.visible = false
-      }
 
       this.renderer.render( this.scene, this.camera, this.composer.renderTarget2, true );
 
       this.depthPassPlugin.enabled = false;
 
       this.ground.visible = true;
-      if( this.smokeRing && this.smokeRing.material.opacity > 0 ) {
-        this.smokeRing.visible = true;
-      }
 
       this.composer.render();
     } else {
