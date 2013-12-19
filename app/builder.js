@@ -180,13 +180,13 @@ mixin(Builder.prototype, {
     this.mapListener(this._stage, 'mousemove', this._onMouseMove);
 
     //ui buttons
-
+/*
     Mousetrap.bind('space', function(){
       self._greetingCameraCenter = new THREE.Vector3(0,20,-50);
       self.trailCanvas.showGreeting();
       self.trailTexture.needsUpdate = true;
     })
-
+*/
     var list = ['left','right','up','down'];
 
     forEach(list,function(dir){
@@ -252,12 +252,18 @@ mixin(Builder.prototype, {
   _onMouseUp: function( evt ){
     this._mouseIsDown = false;
 
-    if( this._decorationEditor && this._decorationEditor.getCurrentBall() ) {
-      this._decorationEditor.attachObject();
-    }
+    if( this._decorationEditor ) {
 
-    if( this._balls.length === 1) {
-      this._tutorial.toStep(2);
+      var currEditBall = this._decorationEditor.getCurrentBall();
+
+      if( currEditBall ) {
+
+        if( this._balls.length === 1) {
+          this._tutorial.toStep(2);
+        }
+
+        this._decorationEditor.attachObject();
+      }
     }
   },
 
@@ -671,7 +677,9 @@ mixin(Builder.prototype, {
     setTimeout(function(){
       self._tutorial.toStep(7);
 
+      self.trailCanvas.showGreeting();
       self.trailTexture.needsUpdate = true;
+
     },2000)
   },
 
@@ -693,10 +701,16 @@ mixin(Builder.prototype, {
 
     function onObjectAttached( type, targetBall ){
       if( type === 'carrot') {
-        self._tutorial.toStep(5);
+
+        if( targetBall === self._snowmanBalls[0] || targetBall === self._snowmanBalls[1]) {
+          self._tutorial.temporaryNote("Oh come on! We are celebrating the birth of Jesus for christ sake!",100);
+        }
+        else {
+          self._tutorial.toStep(5);
+        }
       }
       else if( type === 'branch2') {
-        self._tutorial.toStep(6);
+        self._tutorial.toStep(6,true);
       }
     }
 
@@ -721,21 +735,6 @@ mixin(Builder.prototype, {
     }
 
     if( this._state === STATE_EDIT_SNOWMAN && this._lookAtPosition ) {
-      var currentEditBall = this._decorationEditor.getCurrentBall();
-
-      if( currentEditBall === this._snowmanBalls[0] && this._decorationEditor.currentType === "carrot" && !this._hasShownAlert) {
-        this._hasShownAlert = true;
-        this._tutorial.temporaryNote("Oh come on! We are celebrating the birth of Jesus for christ sake!",25);
-      }
-
-      if( currentEditBall === this._snowmanBalls[2] && this._decorationEditor.currentType === "carrot" ) {
-        this._tutorial.toStep(4,true);
-      }
-
-      /*if( currentEditBall === this._snowmanBalls[1] && this._decorationEditor.currentType === "carrot" && !this._hasShownAlert2) {
-        this._hasShownAlert2 = true;
-        this._tutorial.temporaryNote("It's a nose!",3);
-      }*/
 
       //this.camera.position.y += ((this._lookAtPosition.y + 10 + currentEditBall.ballRadius*2)- this.camera.position.y)*0.1;
       this.camera.position.y += ((this._lookAtPosition.y + this._snowmanBalls[2].mesh.position.y + this._snowmanBalls[2].ballRadius + this._normalizedMouse2D.y*-30)- this.camera.position.y)*0.1;

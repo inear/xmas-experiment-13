@@ -118,7 +118,7 @@ p._show = function(){
 
   this._inTransition = true;
 
-  TweenMax.fromTo( this.$el,1,{y:200},{delay:0.5, y:0, ease:Back.easeOut, force3D:true, onComplete: transitionDone});
+  TweenMax.fromTo( this.$el,0.7,{y:200},{delay:0.5, y:0, ease:Back.easeOut, force3D:true, onComplete: transitionDone});
 
   function transitionDone(){
     self._inTransition = false;
