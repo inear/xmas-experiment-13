@@ -1,5 +1,7 @@
 "use strict";
 
+var Emitter = require('emitter');
+
 module.exports = Trail;
 
 function Trail(){
@@ -16,9 +18,13 @@ function Trail(){
   this.isDrawing;
   this.prevPoint = new THREE.Vector2(512,512);
   this.currentPoint = new THREE.Vector2(512,512);
+
+  this.emit('updateTrailTexture');
 }
 
 var p = Trail.prototype;
+
+Emitter(p)
 
 p.update = function(id,x,y,radius) {
 
@@ -53,6 +59,8 @@ p.update = function(id,x,y,radius) {
 
   this.prevID = id;
   this.prevPoint.copy(this.currentPoint);
+
+  this.emit('updateTrailTexture');
 }
 
 p.makeRoomForSnowman = function( power ){
@@ -66,6 +74,7 @@ p.makeRoomForSnowman = function( power ){
 
   this.ctx.fillStyle = radgrad;
   this.ctx.fillRect(512-60 - 40*power, 512-60-40*power , 120+ 80*power, 120 + 80*power);
+  this.emit('updateTrailTexture');
 }
 
 p.showGreeting = function(){
@@ -76,8 +85,15 @@ p.showGreeting = function(){
   this.ctx.font = "70px Sniglet";
 
   drawTextAlongArc(this.ctx, 'MERRY', 512, 512, 130, Math.PI*0.5);
-  this.ctx.font = "60px Sniglet";
-  drawTextAlongArc(this.ctx, 'XMAS', 512, 512, 50, Math.PI);
+  this.emit('updateTrailTexture');
+
+  var self = this;
+  setTimeout(function(){
+    self.ctx.font = "60px Sniglet";
+    drawTextAlongArc(self.ctx, 'XMAS', 512, 490, 50, Math.PI);
+    self.emit('updateTrailTexture');
+  },500);
+
 }
 
 function angleBetween(point1, point2) {

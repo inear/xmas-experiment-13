@@ -45,15 +45,19 @@ var copy = [
   {
     mouse:'Take a '+ shotBtn +' ?',
     touch:'Take a '+ shotBtn +' ?',
-
   },
-
+  //8
+  {
+    mouse:'Merry cristmas everybody!',
+    touch:'Merry cristmas everybody!',
+  },
 ]
 
 function Tutorial( renderer ) {
   this.renderer = renderer;
   this.$el = $("#instructions");
   this.$contentEl = $("#instructionContent");
+  this.$snowmanEl = $(".snowman-icon");
   this._currentStep = -1;
   this._isActive = false;
   this.$el.removeClass("inactive")
@@ -118,6 +122,7 @@ p._show = function(){
 
   this._inTransition = true;
 
+  TweenMax.fromTo( this.$snowmanEl,0.7,{y:180},{delay:0.5, y:0, ease:Back.easeOut, force3D:true});
   TweenMax.fromTo( this.$el,0.7,{y:200},{delay:0.5, y:0, ease:Back.easeOut, force3D:true, onComplete: transitionDone});
 
   function transitionDone(){
@@ -136,6 +141,7 @@ p._animationOut = function(){
   this._clearTemporaryTimeouts();
 
   var self = this;
+  TweenMax.fromTo( this.$snowmanEl,0.7,{y:0},{delay:0.5, y:180, ease:Back.easeIn, force3D:true});
   TweenMax.fromTo(this.$el,0.3,{y:0},{y:200, ease:Back.easeIn, force3D:true, onComplete: transitionDone });
 
   function transitionDone(){

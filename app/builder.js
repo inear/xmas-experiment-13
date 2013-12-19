@@ -32,7 +32,7 @@ var CURSOR_POINTER = 'cursor pointer';
 
 function Builder() {
 
-  this.usePostProcessing = true;
+  this.usePostProcessing = false;
   this.postProcessingActivated = false;
 
   this.groundSize = {width:2000,height:2000};
@@ -73,7 +73,8 @@ function Builder() {
   this._snowmanBalls = [];
   this._lookAtPosition = null;
 
-  this.trailCanvas = new Trail();
+
+
 
   this._initSnowChunks();
 
@@ -103,7 +104,12 @@ mixin(Builder.prototype, {
 
     this._state = STATE_CREATING_BALLS;
 
+    this.trailCanvas = new Trail();
+
     this._init3D();
+
+    this._updateTrailTexture = this._updateTrailTexture.bind(this);
+    this.trailCanvas.on('updateTrailTexture', this._updateTrailTexture);
 
     if( this.usePostProcessing ) {
       this._initPostProcessing();
@@ -144,9 +150,12 @@ mixin(Builder.prototype, {
 
   },
 
+  _updateTrailTexture: function(){
+    this.trailTexture.needsUpdate = true;
+  },
+
   _onTakePicture: function(){
-
-
+    this._tutorial.toStep(8);
   },
 
   _initSnowChunks: function(){
